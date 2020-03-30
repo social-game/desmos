@@ -27,9 +27,8 @@ func TestDesmosCLIPostsCreateNoMediasNoPollData(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message#test"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y")
@@ -79,9 +78,8 @@ func TestDesmosCLIPostsCreateAllowsCommentFalse(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message#test"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y",
@@ -135,9 +133,8 @@ func TestDesmosCLIPostsCreateWithMediasAndEmptyMessage(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := ""
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y",
@@ -196,9 +193,8 @@ func TestDesmosCLIPostsCreateWithMediasAndNonEmptyMessage(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y",
@@ -257,9 +253,8 @@ func TestDesmosCLIPostsCreateWithNoMediasAndNonEmptyMessage(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y")
@@ -309,9 +304,8 @@ func TestDesmosCLIPostsCreateWithPoll(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a post
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y",
@@ -389,9 +383,8 @@ func TestDesmosCLIPostsAnswerPoll(t *testing.T) {
 	// Later usage variables
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	message := "message"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Create a poll with single answer
 	success, _, sterr := f.TxPostsCreate(subspace, message, fooAddr, "-y",
@@ -595,9 +588,8 @@ func TestDesmosCLIRegisterReaction(t *testing.T) {
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	shortCode := ":like:"
 	value := "https://like.jpg"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Register a reaction
 	success, _, sterr := f.TxPostsRegisterReaction(shortCode, value, subspace, fooAddr, "-y")
@@ -646,9 +638,8 @@ func TestDesmosCLIRegisterReactionEmojiValue(t *testing.T) {
 	subspace := "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e"
 	shortCode := ":like:"
 	value := "🎉"
-	fooAcc := f.QueryAccount(fooAddr)
 	startTokens := sdk.TokensFromConsensusPower(140)
-	require.Equal(t, startTokens, fooAcc.GetCoins().AmountOf(denom))
+	require.Equal(t, startTokens, f.QueryBalances(fooAddr).AmountOf(denom))
 
 	// Register a reaction
 	success, _, sterr := f.TxPostsRegisterReaction(shortCode, value, subspace, fooAddr, "-y")

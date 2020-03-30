@@ -16,15 +16,7 @@ import (
 
 // MsgCreatePost defines a CreatePost message
 type MsgCreatePost struct {
-	ParentID       PostID            `json:"parent_id"`
-	Message        string            `json:"message"`
-	AllowsComments bool              `json:"allows_comments"`
-	Subspace       string            `json:"subspace"`
-	OptionalData   map[string]string `json:"optional_data,omitempty"`
-	Creator        sdk.AccAddress    `json:"creator"`
-	CreationDate   time.Time         `json:"creation_date"`
-	Medias         PostMedias        `json:"medias,omitempty"`
-	PollData       *PollData         `json:"poll_data,omitempty"`
+	CreationData
 }
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
@@ -32,15 +24,9 @@ func NewMsgCreatePost(message string, parentID PostID, allowsComments bool, subs
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
 	medias PostMedias, pollData *PollData) MsgCreatePost {
 	return MsgCreatePost{
-		Message:        message,
-		ParentID:       parentID,
-		AllowsComments: allowsComments,
-		Subspace:       subspace,
-		OptionalData:   optionalData,
-		Creator:        owner,
-		CreationDate:   creationDate,
-		Medias:         medias,
-		PollData:       pollData,
+		CreationData: NewCreationData(
+			message, parentID, allowsComments, subspace, optionalData, owner, creationDate, medias, pollData,
+		),
 	}
 }
 
@@ -52,59 +38,7 @@ func (msg MsgCreatePost) Type() string { return ActionCreatePost }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreatePost) ValidateBasic() error {
-	if msg.Creator.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprintf("Invalid creator address: %s", msg.Creator))
-	}
-
-	if len(strings.TrimSpace(msg.Message)) == 0 && len(msg.Medias) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Post message or medias are required and cannot be both blank or empty")
-	}
-
-	if len(msg.Message) > MaxPostMessageLength {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("Post message cannot exceed %d characters", MaxPostMessageLength))
-	}
-
-	if !SubspaceRegEx.MatchString(msg.Subspace) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Post subspace must be a valid sha-256 hash")
-	}
-
-	if len(msg.OptionalData) > MaxOptionalDataFieldsNumber {
-		msg := fmt.Sprintf("Post optional data cannot be longer than %d fields", MaxOptionalDataFieldsNumber)
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, msg)
-	}
-
-	for key, value := range msg.OptionalData {
-		if len(value) > MaxOptionalDataFieldValueLength {
-			msg := fmt.Sprintf("Post optional data value lengths cannot be longer than %d. %s exceeds the limit",
-				MaxOptionalDataFieldValueLength, key)
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, msg)
-		}
-	}
-
-	if msg.CreationDate.IsZero() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Invalid post creation date")
-	}
-
-	if msg.CreationDate.After(time.Now().UTC()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Creation date cannot be in the future")
-	}
-
-	if msg.Medias != nil {
-		if err := msg.Medias.Validate(); err != nil {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
-		}
-	}
-
-	if msg.PollData != nil {
-		if !msg.PollData.Open {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Poll Post cannot be created closed")
-		}
-		if err := msg.PollData.Validate(); err != nil {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
-		}
-	}
-
-	return nil
+	return msg.CreationData.ValidateBasic()
 }
 
 // GetSignBytes encodes the message for signing
@@ -117,7 +51,7 @@ func (msg MsgCreatePost) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Creator}
 }
 
-// MarshalJSON implements the json.Mashaler interface.
+// MarshalJSON implements the json.Marshaler interface.
 // This is done due to the fact that Amino does not respect omitempty clauses
 func (msg MsgCreatePost) MarshalJSON() ([]byte, error) {
 	type temp MsgCreatePost

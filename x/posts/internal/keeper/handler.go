@@ -2,8 +2,8 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
 
+	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/types"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +15,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgCreatePost:
-			return handleMsgCreatePost(ctx, keeper, msg)
+			return handlePostCreationRequest(ctx, keeper, msg.CreationData)
 		case types.MsgEditPost:
 			return handleMsgEditPost(ctx, keeper, msg)
 		case types.MsgAddPostReaction:
@@ -26,6 +26,16 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgAnswerPollPost(ctx, keeper, msg)
 		case types.MsgRegisterReaction:
 			return handleMsgRegisterReaction(ctx, keeper, msg)
+
+		case channeltypes.MsgPacket:
+			switch data := msg.Data.(type) {
+			case types.CreatePostPacketData:
+				return handleCreationPacketData(ctx, keeper, msg, data)
+
+			default:
+				return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized posts transfer packet data type: %T", data)
+			}
+
 		default:
 			errMsg := fmt.Sprintf("Unrecognized Posts message type: %v", msg.Type())
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -33,21 +43,21 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-// handleMsgCreatePost handles the creation of a new post
-func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg types.MsgCreatePost) (*sdk.Result, error) {
+// handlePostCreationRequest handles the creation of a new post
+func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.CreationData) (*sdk.Result, error) {
 	post := types.NewPost(
 		keeper.GetLastPostID(ctx).Next(),
-		msg.ParentID,
-		msg.Message,
-		msg.AllowsComments,
-		msg.Subspace,
-		msg.OptionalData,
-		msg.CreationDate,
-		msg.Creator,
-	).WithMedias(msg.Medias)
+		data.ParentID,
+		data.Message,
+		data.AllowsComments,
+		data.Subspace,
+		data.OptionalData,
+		data.CreationDate,
+		data.Creator,
+	).WithMedias(data.Medias)
 
-	if msg.PollData != nil {
-		post = post.WithPollData(*msg.PollData)
+	if data.PollData != nil {
+		post = post.WithPollData(*data.PollData)
 	}
 
 	// Check for double posting
@@ -86,6 +96,27 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg types.MsgCreatePost
 	return &result, nil
 }
 
+// handleCreationPacketData handles a MsgPacket containing a CreatePostPacketData
+func handleCreationPacketData(
+	ctx sdk.Context, k Keeper, msg channeltypes.MsgPacket, data types.CreatePostPacketData,
+) (*sdk.Result, error) {
+	result, err := handlePostCreationRequest(ctx, k, data.CreationData)
+	if err != nil {
+
+		if err := k.ChanCloseInit(ctx, msg.Packet.DestinationPort, msg.Packet.DestinationChannel); err != nil {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	acknowledgement := types.AckDataCreation{}
+	if err := k.PacketExecuted(ctx, msg.Packet, acknowledgement); err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 // handleMsgEditPost handles the edit of posts
 func handleMsgEditPost(ctx sdk.Context, keeper Keeper, msg types.MsgEditPost) (*sdk.Result, error) {
 
@@ -121,192 +152,5 @@ func handleMsgEditPost(ctx sdk.Context, keeper Keeper, msg types.MsgEditPost) (*
 		Data:   keeper.Cdc.MustMarshalBinaryLengthPrefixed(existing.PostID),
 		Events: sdk.Events{editEvent},
 	}
-	return &result, nil
-}
-
-// handleMsgAddPostReaction handles the adding of a reaction to a post
-func handleMsgAddPostReaction(ctx sdk.Context, keeper Keeper, msg types.MsgAddPostReaction) (*sdk.Result, error) {
-
-	// Get the post
-	post, found := keeper.GetPost(ctx, msg.PostID)
-	if !found {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("post with id %s not found", msg.PostID))
-	}
-
-	// Create and store the reaction
-	reaction := types.NewPostReaction(msg.Value, msg.User)
-
-	if err := keeper.SavePostReaction(ctx, post.PostID, reaction); err != nil {
-		return nil, err
-	}
-
-	// Emit the event
-	event := sdk.NewEvent(
-		types.EventTypePostReactionAdded,
-		sdk.NewAttribute(types.AttributeKeyPostID, msg.PostID.String()),
-		sdk.NewAttribute(types.AttributeKeyPostReactionOwner, msg.User.String()),
-		sdk.NewAttribute(types.AttributeKeyPostReactionValue, msg.Value),
-	)
-	ctx.EventManager().EmitEvent(event)
-
-	result := sdk.Result{
-		Data:   []byte("reaction added properly"),
-		Events: sdk.Events{event},
-	}
-	return &result, nil
-}
-
-// handleMsgRemovePostReaction handles the removal of a reaction from a post
-func handleMsgRemovePostReaction(ctx sdk.Context, keeper Keeper, msg types.MsgRemovePostReaction) (*sdk.Result, error) {
-
-	// Get the post
-	post, found := keeper.GetPost(ctx, msg.PostID)
-	if !found {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("post with id %s not found", msg.PostID))
-	}
-
-	// Remove the reaction
-	if err := keeper.RemovePostReaction(ctx, post.PostID, msg.User, msg.Reaction); err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
-	}
-
-	// Emit the event
-	event := sdk.NewEvent(
-		types.EventTypePostReactionRemoved,
-		sdk.NewAttribute(types.AttributeKeyPostID, msg.PostID.String()),
-		sdk.NewAttribute(types.AttributeKeyPostReactionOwner, msg.User.String()),
-		sdk.NewAttribute(types.AttributeKeyPostReactionValue, msg.Reaction),
-	)
-	ctx.EventManager().EmitEvent(event)
-
-	result := sdk.Result{
-		Data:   []byte("reaction removed properly"),
-		Events: sdk.Events{event},
-	}
-	return &result, nil
-}
-
-// checkPostPollValid performs all the checks to ensure the post with the given id exists, contains a poll and such poll has not been closed
-func checkPostPollValid(ctx sdk.Context, id types.PostID, keeper Keeper) (*types.Post, error) {
-	// checks if post exists
-	post, found := keeper.GetPost(ctx, id)
-	if !found {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("post with id %s doesn't exist", id))
-	}
-
-	// checks if post has a poll
-	if post.PollData == nil {
-		return &post, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("no poll associated with ID: %s", id))
-	}
-
-	// checks if the poll is already closed or not
-	if !post.PollData.Open {
-		return &post, sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("the poll associated with ID %s was closed at %s", post.PostID, post.PollData.EndDate),
-		)
-	}
-
-	return &post, nil
-}
-
-// answerExist checks if the answer is contained in providedAnswers slice
-func answerExist(providedAnswers []types.AnswerID, answer types.AnswerID) bool {
-	for _, ans := range providedAnswers {
-		if ans == answer {
-			return true
-		}
-	}
-	return false
-}
-
-// handleMsgAnswerPollPost handles the answer to a poll post
-func handleMsgAnswerPollPost(ctx sdk.Context, keeper Keeper, msg types.MsgAnswerPoll) (*sdk.Result, error) {
-
-	post, err := checkPostPollValid(ctx, msg.PostID, keeper)
-	if err != nil {
-		return nil, err
-	}
-
-	// checks if the post's poll allows multiple answers
-	if len(msg.UserAnswers) > 1 && !post.PollData.AllowsMultipleAnswers {
-		return nil, sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("the poll associated with ID %s doesn't allow multiple answers",
-				post.PostID),
-		)
-	}
-
-	// check if the user answers are more than the answers provided by the poll
-	if len(msg.UserAnswers) > len(post.PollData.ProvidedAnswers) {
-		return nil, sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("user's answers are more than the available ones in Poll"),
-		)
-	}
-
-	for _, answer := range msg.UserAnswers {
-		if found := answerExist(post.PollData.ProvidedAnswers.ExtractAnswersIDs(), answer); !found {
-			return nil, sdkerrors.Wrap(
-				sdkerrors.ErrInvalidRequest,
-				fmt.Sprintf(
-					"answer with ID %s isn't one of the poll's provided answers",
-					strconv.FormatUint(uint64(answer), 10)),
-			)
-		}
-	}
-
-	pollAnswers := keeper.GetPollAnswersByUser(ctx, post.PostID, msg.Answerer)
-
-	// check if the poll allows to edit previous answers
-	if len(pollAnswers) > 0 && !post.PollData.AllowsAnswerEdits {
-		return nil, sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("post with ID %s doesn't allow answers' edits", post.PostID),
-		)
-	}
-
-	userPollAnswers := types.NewUserAnswer(msg.UserAnswers, msg.Answerer)
-
-	keeper.SavePollAnswers(ctx, post.PostID, userPollAnswers)
-
-	answerEvent := sdk.NewEvent(
-		types.EventTypeAnsweredPoll,
-		sdk.NewAttribute(types.AttributeKeyPostID, msg.PostID.String()),
-		sdk.NewAttribute(types.AttributeKeyPollAnswerer, msg.Answerer.String()),
-	)
-
-	ctx.EventManager().EmitEvent(answerEvent)
-
-	result := sdk.Result{
-		Data:   keeper.Cdc.MustMarshalBinaryLengthPrefixed("Answered to poll correctly"),
-		Events: sdk.Events{answerEvent},
-	}
-	return &result, nil
-}
-
-func handleMsgRegisterReaction(ctx sdk.Context, keeper Keeper, msg types.MsgRegisterReaction) (*sdk.Result, error) {
-	if _, isAlreadyRegistered := keeper.DoesReactionForShortCodeExist(ctx, msg.ShortCode, msg.Subspace); isAlreadyRegistered {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf(
-			"reaction with shortcode %s and subspace %s has already been registered", msg.ShortCode, msg.Subspace))
-	}
-
-	reaction := types.NewReaction(msg.Creator, msg.ShortCode, msg.Value, msg.Subspace)
-
-	keeper.RegisterReaction(ctx, reaction)
-
-	event := sdk.NewEvent(
-		types.EventTypeRegisterReaction,
-		sdk.NewAttribute(types.AttributeKeyReactionCreator, msg.Creator.String()),
-		sdk.NewAttribute(types.AttributeKeyReactionShortCode, msg.ShortCode),
-		sdk.NewAttribute(types.AttributeKeyReactionSubSpace, msg.Subspace),
-	)
-	ctx.EventManager().EmitEvent(event)
-
-	result := sdk.Result{
-		Data:   []byte("reaction registered properly"),
-		Events: sdk.Events{event},
-	}
-
 	return &result, nil
 }

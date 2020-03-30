@@ -6,6 +6,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/ibc"
+	channel "github.com/cosmos/cosmos-sdk/x/ibc/04-channel"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -17,12 +19,14 @@ import (
 func SetupTestInput() (sdk.Context, keeper.Keeper) {
 
 	// define store keys
-	magpieKey := sdk.NewKVStoreKey("magpie")
+	keys := sdk.NewKVStoreKeys(types.StoreKey, ibc.StoreKey)
 
 	// create an in-memory db
 	memDB := db.NewMemDB()
 	ms := store.NewCommitMultiStore(memDB)
-	ms.MountStoreWithDB(magpieKey, sdk.StoreTypeIAVL, memDB)
+	for _, key := range keys {
+		ms.MountStoreWithDB(key, sdk.StoreTypeIAVL, memDB)
+	}
 	if err := ms.LoadLatestVersion(); err != nil {
 		panic(err)
 	}
@@ -31,7 +35,8 @@ func SetupTestInput() (sdk.Context, keeper.Keeper) {
 	cdc := testCodec()
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
-	return ctx, keeper.NewKeeper(cdc, magpieKey)
+	// TODO: Create a valid channel Keeper
+	return ctx, keeper.NewKeeper(cdc, keys[types.StoreKey], channel.Keeper{})
 }
 
 func testCodec() *codec.Codec {
