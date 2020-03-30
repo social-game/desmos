@@ -239,7 +239,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		srvconfig.WriteConfigFile(configFilePath, gaiaConfig)
 	}
 
-	if err := initGenFiles(cdc, mbm, chainID, genAccounts, genFiles, numValidators); err != nil {
+	if err := initGenFiles(cdc, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
 		return err
 	}
 
@@ -257,17 +257,25 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 
 func initGenFiles(
 	cdc *codec.Codec, mbm module.BasicManager, chainID string,
-	genAccounts []authexported.GenesisAccount, genFiles []string, numValidators int,
+	genAccounts []authexported.GenesisAccount, genBalances []bank.Balance,
+	genFiles []string, numValidators int,
 ) error {
 
 	appGenState := mbm.DefaultGenesis(cdc)
 
 	// set the accounts in the genesis state
-	authDataBz := appGenState[auth.ModuleName]
 	var authGenState auth.GenesisState
-	cdc.MustUnmarshalJSON(authDataBz, &authGenState)
+	cdc.MustUnmarshalJSON(appGenState[auth.ModuleName], &authGenState)
+
 	authGenState.Accounts = genAccounts
 	appGenState[auth.ModuleName] = cdc.MustMarshalJSON(authGenState)
+
+	// set the balances in the genesis state
+	var bankGenState bank.GenesisState
+	cdc.MustUnmarshalJSON(appGenState[bank.ModuleName], &bankGenState)
+
+	bankGenState.Balances = genBalances
+	appGenState[bank.ModuleName] = cdc.MustMarshalJSON(bankGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
 	if err != nil {
@@ -293,7 +301,8 @@ func collectGenFiles(
 	cdc *codec.Codec, config *tmconfig.Config, chainID string,
 	monikers, nodeIDs []string, valPubKeys []crypto.PubKey,
 	numValidators int, outputDir, nodeDirPrefix, nodeDaemonHome string,
-	balancesIterator bank.GenesisBalancesIterator) error {
+	genBalIterator bank.GenesisBalancesIterator,
+) error {
 
 	var appState json.RawMessage
 	genTime := tmtime.Now()
@@ -315,7 +324,7 @@ func collectGenFiles(
 			return err
 		}
 
-		nodeAppState, err := genutil.GenAppStateFromConfig(cdc, config, initCfg, *genDoc, balancesIterator)
+		nodeAppState, err := genutil.GenAppStateFromConfig(cdc, config, initCfg, *genDoc, genBalIterator)
 		if err != nil {
 			return err
 		}
