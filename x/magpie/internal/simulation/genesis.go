@@ -4,7 +4,7 @@ package simulation
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/module"
-	sim "github.com/cosmos/cosmos-sdk/x/simulation"
+	sim "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/desmos-labs/desmos/x/magpie/internal/types"
 )
 

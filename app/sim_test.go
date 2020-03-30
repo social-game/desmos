@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	"github.com/desmos-labs/desmos/x/magpie"
@@ -62,7 +63,7 @@ func interBlockCacheOpt() func(*baseapp.BaseApp) {
 }
 
 // SetupSimulation wraps simapp.SetupSimulation in order to create any export directory if they do not exist yet
-func SetupSimulation(dirPrefix, dbName string) (simulation.Config, dbm.DB, string, log.Logger, bool, error) {
+func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string, log.Logger, bool, error) {
 	config, db, dir, logger, skip, err := simapp.SetupSimulation(dirPrefix, dbName)
 
 	paths := []string{config.ExportParamsPath, config.ExportStatePath, config.ExportStatsPath}
@@ -94,7 +95,7 @@ func TestFullAppSimulation(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, fauxMerkleModeOpt)
+	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, "", fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// run randomized simulation
@@ -126,7 +127,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, fauxMerkleModeOpt)
+	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, "", fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -160,7 +161,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(newDir))
 	}()
 
-	newApp := NewDesmosApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, fauxMerkleModeOpt)
+	newApp := NewDesmosApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, "", fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
 	var genesisState GenesisState
@@ -169,7 +170,7 @@ func TestAppImportExport(t *testing.T) {
 
 	ctxA := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
 	ctxB := newApp.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
-	newApp.mm.InitGenesis(ctxB, genesisState)
+	newApp.mm.InitGenesis(ctxB, app.cdc, genesisState)
 
 	fmt.Printf("comparing stores...\n")
 
@@ -215,7 +216,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, fauxMerkleModeOpt)
+	app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, "", fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -254,7 +255,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(newDir))
 	}()
 
-	newApp := NewDesmosApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, fauxMerkleModeOpt)
+	newApp := NewDesmosApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, "", fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
 	newApp.InitChain(abci.RequestInitChain{
@@ -298,7 +299,7 @@ func TestAppStateDeterminism(t *testing.T) {
 
 			db := dbm.NewMemDB()
 
-			app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, interBlockCacheOpt())
+			app := NewDesmosApp(logger, db, nil, true, map[int64]bool{}, "", interBlockCacheOpt())
 
 			fmt.Printf(
 				"running non-determinism simulation; seed %d: %d/%d, attempt: %d/%d\n",

@@ -4,8 +4,10 @@ import (
 	"math/rand"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	sim "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	sim "github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/simulation"
 	"github.com/desmos-labs/desmos/app/params"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
 )
@@ -23,7 +25,9 @@ const (
 )
 
 // WeightedOperations returns all the operations from the module with their respective weights
-func WeightedOperations(appParams sim.AppParams, cdc *codec.Codec, k keeper.Keeper, ak auth.AccountKeeper) sim.WeightedOperations {
+func WeightedOperations(
+	appParams sim.AppParams, cdc *codec.Codec, k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper,
+) simulation.WeightedOperations {
 
 	var weightMsgCreatePost int
 	appParams.GetOrGenerate(cdc, OpWeightMsgCreatePost, &weightMsgCreatePost, nil,
@@ -67,30 +71,30 @@ func WeightedOperations(appParams sim.AppParams, cdc *codec.Codec, k keeper.Keep
 		},
 	)
 
-	return sim.WeightedOperations{
-		sim.NewWeightedOperation(
+	return simulation.WeightedOperations{
+		simulation.NewWeightedOperation(
 			weightMsgCreatePost,
-			SimulateMsgCreatePost(k, ak),
+			SimulateMsgCreatePost(k, ak, bk),
 		),
-		sim.NewWeightedOperation(
+		simulation.NewWeightedOperation(
 			weightMsgEditPost,
-			SimulateMsgEditPost(k, ak),
+			SimulateMsgEditPost(k, ak, bk),
 		),
-		sim.NewWeightedOperation(
+		simulation.NewWeightedOperation(
 			weightMsgRegisterReaction,
-			SimulateMsgRegisterReaction(k, ak),
+			SimulateMsgRegisterReaction(k, ak, bk),
 		),
-		sim.NewWeightedOperation(
+		simulation.NewWeightedOperation(
 			weightMsgAddReaction,
-			SimulateMsgAddPostReaction(k, ak),
+			SimulateMsgAddPostReaction(k, ak, bk),
 		),
-		sim.NewWeightedOperation(
+		simulation.NewWeightedOperation(
 			weightMsgRemoveReaction,
-			SimulateMsgRemovePostReaction(k, ak),
+			SimulateMsgRemovePostReaction(k, ak, bk),
 		),
-		sim.NewWeightedOperation(
+		simulation.NewWeightedOperation(
 			weightMsgAnswerPoll,
-			SimulateMsgAnswerToPoll(k, ak),
+			SimulateMsgAnswerToPoll(k, ak, bk),
 		),
 	}
 }

@@ -7,8 +7,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/simapp/helpers"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sim "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	sim "github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -16,7 +17,7 @@ import (
 
 // SimulateMsgCreatePost tests and runs a single msg create post where the post creator account already exists
 // nolint: funlen
-func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
+func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper) sim.Operation {
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context,
 		accs []sim.Account, chainID string,
@@ -43,7 +44,7 @@ func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation
 			data.PollData,
 		)
 
-		err = sendMsgCreatePost(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{data.Creator.PrivKey})
+		err = sendMsgCreatePost(r, app, ak, bk, msg, ctx, chainID, []crypto.PrivKey{data.Creator.PrivKey})
 		if err != nil {
 			return sim.NoOpMsg(types.ModuleName), nil, err
 		}
@@ -54,12 +55,12 @@ func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation
 
 // sendMsgCreatePost sends a transaction with a MsgCreatePost from a provided random account.
 func sendMsgCreatePost(
-	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper,
+	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper, bk bank.Keeper,
 	msg types.MsgCreatePost, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 
 	account := ak.GetAccount(ctx, msg.Creator)
-	coins := account.SpendableCoins(ctx.BlockTime())
+	coins := bk.SpendableCoins(ctx, msg.Creator)
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {
@@ -114,7 +115,7 @@ func randomPostCreateFields(
 
 // SimulateMsgEditPost tests and runs a single msg edit post where the post creator account already exists
 // nolint: funlen
-func SimulateMsgEditPost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
+func SimulateMsgEditPost(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper) sim.Operation {
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context,
 		accs []sim.Account, chainID string,
@@ -131,7 +132,7 @@ func SimulateMsgEditPost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
 
 		msg := types.NewMsgEditPost(id, message, account.Address, time.Now().UTC())
 
-		err = sendMsgEditPost(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{account.PrivKey})
+		err = sendMsgEditPost(r, app, ak, bk, msg, ctx, chainID, []crypto.PrivKey{account.PrivKey})
 		if err != nil {
 			return sim.NoOpMsg(types.ModuleName), nil, err
 		}
@@ -142,12 +143,12 @@ func SimulateMsgEditPost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
 
 // sendMsgEditPost sends a transaction with a MsgEditPost from a provided random account.
 func sendMsgEditPost(
-	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper,
+	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper, bk bank.Keeper,
 	msg types.MsgEditPost, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 
 	account := ak.GetAccount(ctx, msg.Editor)
-	coins := account.SpendableCoins(ctx.BlockTime())
+	coins := bk.SpendableCoins(ctx, account.GetAddress())
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {

@@ -6,8 +6,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/simapp/helpers"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sim "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	sim "github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -19,7 +20,7 @@ import (
 
 // SimulateMsgAddPostReaction tests and runs a single msg add reaction where the reacting user account already exists
 // nolint: funlen
-func SimulateMsgAddPostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
+func SimulateMsgAddPostReaction(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper) sim.Operation {
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context,
 		accs []sim.Account, chainID string,
@@ -35,7 +36,7 @@ func SimulateMsgAddPostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Oper
 		}
 
 		msg := types.NewMsgAddPostReaction(data.PostID, data.Value, data.User.Address)
-		err = sendMsgAddPostReaction(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{data.User.PrivKey})
+		err = sendMsgAddPostReaction(r, app, ak, bk, msg, ctx, chainID, []crypto.PrivKey{data.User.PrivKey})
 		if err != nil {
 			return sim.NoOpMsg(types.ModuleName), nil, err
 		}
@@ -46,12 +47,12 @@ func SimulateMsgAddPostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Oper
 
 // sendMsgAddPostReaction sends a transaction with a MsgAddReaction from a provided random account.
 func sendMsgAddPostReaction(
-	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper,
+	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper, bk bank.Keeper,
 	msg types.MsgAddPostReaction, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 
 	account := ak.GetAccount(ctx, msg.User)
-	coins := account.SpendableCoins(ctx.BlockTime())
+	coins := bk.SpendableCoins(ctx, account.GetAddress())
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {
@@ -122,7 +123,7 @@ func randomAddPostReactionFields(
 
 // SimulateMsgRemovePostReaction tests and runs a single msg remove reaction where the reacting user account already exists
 // nolint: funlen
-func SimulateMsgRemovePostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
+func SimulateMsgRemovePostReaction(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper) sim.Operation {
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context,
 		accs []sim.Account, chainID string,
@@ -138,7 +139,7 @@ func SimulateMsgRemovePostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.O
 		}
 
 		msg := types.NewMsgRemovePostReaction(data.PostID, data.User.Address, data.Value)
-		err = sendMsgRemovePostReaction(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{data.User.PrivKey})
+		err = sendMsgRemovePostReaction(r, app, ak, bk, msg, ctx, chainID, []crypto.PrivKey{data.User.PrivKey})
 		if err != nil {
 			return sim.NoOpMsg(types.ModuleName), nil, err
 		}
@@ -149,12 +150,12 @@ func SimulateMsgRemovePostReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.O
 
 // sendMsgRemovePostReaction sends a transaction with a MsgRemoveReaction from a provided random account.
 func sendMsgRemovePostReaction(
-	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper,
+	r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper, bk bank.Keeper,
 	msg types.MsgRemovePostReaction, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 
 	account := ak.GetAccount(ctx, msg.User)
-	coins := account.SpendableCoins(ctx.BlockTime())
+	coins := bk.SpendableCoins(ctx, account.GetAddress())
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {
@@ -213,7 +214,7 @@ func randomRemovePostReactionFields(
 
 // SimulateMsgRegisterReaction tests and runs a single msg register reaction where the registering user account already exist
 // nolint: funlen
-func SimulateMsgRegisterReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation {
+func SimulateMsgRegisterReaction(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keeper) sim.Operation {
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context,
 		accs []sim.Account, chainID string,
@@ -230,7 +231,7 @@ func SimulateMsgRegisterReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Ope
 		msg := types.NewMsgRegisterReaction(reactionData.Creator.Address,
 			reactionData.ShortCode, reactionData.Value, reactionData.Subspace)
 
-		err = sendMsgRegisterReaction(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{reactionData.Creator.PrivKey})
+		err = sendMsgRegisterReaction(r, app, ak, bk, msg, ctx, chainID, []crypto.PrivKey{reactionData.Creator.PrivKey})
 		if err != nil {
 			return sim.NoOpMsg(types.ModuleName), nil, err
 		}
@@ -240,11 +241,11 @@ func SimulateMsgRegisterReaction(k keeper.Keeper, ak auth.AccountKeeper) sim.Ope
 }
 
 // sendMsgRegisterReaction sends a transaction with a MsgRegisterReaction from a provided random account.
-func sendMsgRegisterReaction(r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper,
+func sendMsgRegisterReaction(r *rand.Rand, app *baseapp.BaseApp, ak auth.AccountKeeper, bk bank.Keeper,
 	msg types.MsgRegisterReaction, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 	account := ak.GetAccount(ctx, msg.Creator)
-	coins := account.SpendableCoins(ctx.BlockTime())
+	coins := bk.SpendableCoins(ctx, account.GetAddress())
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {

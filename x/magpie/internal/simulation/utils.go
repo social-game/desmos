@@ -6,8 +6,8 @@ import (
 
 	secp256k1 "github.com/btcsuite/btcd/btcec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sim "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/simulation"
 	"github.com/desmos-labs/desmos/x/magpie/internal/types"
 	"github.com/tendermint/tendermint/libs/bech32"
 )
@@ -17,14 +17,14 @@ var (
 )
 
 type SessionData struct {
-	Owner         simulation.Account
+	Owner         sim.Account
 	Namespace     string
 	ExternalOwner string
 	PubKey        string
 	Signature     string
 }
 
-func RandomSessionData(simAccount simulation.Account, r *rand.Rand) SessionData {
+func RandomSessionData(simAccount sim.Account, r *rand.Rand) SessionData {
 	namespace := RandomNamespaces[r.Intn(len(RandomNamespaces))]
 
 	extOwner, err := bech32.ConvertAndEncode(namespace, simAccount.Address.Bytes())
