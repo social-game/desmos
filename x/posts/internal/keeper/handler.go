@@ -15,7 +15,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgCreatePost:
-			return handlePostCreationRequest(ctx, keeper, msg.PostCreationPacketData)
+			return handlePostCreationRequest(ctx, keeper, msg.PostCreationData)
 		case types.MsgEditPost:
 			return handleMsgEditPost(ctx, keeper, msg)
 		case types.MsgAddPostReaction:
@@ -44,7 +44,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 // handlePostCreationRequest handles the creation of a new post
-func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationPacketData) (*sdk.Result, error) {
+func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationData) (*sdk.Result, error) {
 	post := types.NewPost(
 		keeper.GetLastPostID(ctx).Next(),
 		data.ParentID,
@@ -100,7 +100,7 @@ func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 func handleCreationPacketData(
 	ctx sdk.Context, k Keeper, msg channeltypes.MsgPacket, data types.CreatePostPacketData,
 ) (*sdk.Result, error) {
-	result, err := handlePostCreationRequest(ctx, k, data.PostCreationPacketData)
+	result, err := handlePostCreationRequest(ctx, k, data.PostCreationData)
 	if err != nil {
 
 		if err := k.ChanCloseInit(ctx, msg.Packet.DestinationPort, msg.Packet.DestinationChannel); err != nil {

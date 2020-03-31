@@ -12,9 +12,19 @@ import (
 
 var _ channelexported.PacketDataI = CreatePostPacketData{}
 
+// CreatePostPacketData represents the packet data that should be sent when
+// wanting to create a new post
 type CreatePostPacketData struct {
-	PostCreationPacketData
+	PostCreationData
 	Timeout uint64 `json:"timeout" yaml:"timeout"`
+}
+
+// NewCreatePostPacketData is the builder function for a new CreatePostPacketData
+func NewCreatePostPacketData(data PostCreationData, timeout uint64) CreatePostPacketData {
+	return CreatePostPacketData{
+		PostCreationData: data,
+		Timeout:          timeout,
+	}
 }
 
 // String returns a string representation of FungibleTokenPacketData
@@ -22,14 +32,14 @@ func (cppd CreatePostPacketData) String() string {
 	return fmt.Sprintf(`CreatePostPacketData:
 	%s
 	Timeout:            %d`,
-		cppd.PostCreationPacketData,
+		cppd.PostCreationData,
 		cppd.Timeout,
 	)
 }
 
 // ValidateBasic implements channelexported.PacketDataI
 func (cppd CreatePostPacketData) ValidateBasic() error {
-	if err := cppd.PostCreationPacketData.ValidateBasic(); err != nil {
+	if err := cppd.PostCreationData.ValidateBasic(); err != nil {
 		return err
 	}
 

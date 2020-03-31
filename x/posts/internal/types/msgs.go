@@ -16,7 +16,7 @@ import (
 
 // MsgCreatePost defines a CreatePost message
 type MsgCreatePost struct {
-	PostCreationPacketData
+	PostCreationData
 }
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
@@ -24,7 +24,7 @@ func NewMsgCreatePost(message string, parentID PostID, allowsComments bool, subs
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
 	medias PostMedias, pollData *PollData) MsgCreatePost {
 	return MsgCreatePost{
-		PostCreationPacketData: NewPostCreationPacketData(
+		PostCreationData: NewPostCreationData(
 			message, parentID, allowsComments, subspace, optionalData, owner, creationDate, medias, pollData,
 		),
 	}
@@ -38,7 +38,7 @@ func (msg MsgCreatePost) Type() string { return ActionCreatePost }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreatePost) ValidateBasic() error {
-	return msg.PostCreationPacketData.ValidateBasic()
+	return msg.PostCreationData.ValidateBasic()
 }
 
 // GetSignBytes encodes the message for signing
