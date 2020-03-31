@@ -34,7 +34,7 @@ func stakingGenesisState() staking.GenesisState {
 			staking.DefaultUnbondingTime,
 			staking.DefaultMaxValidators,
 			staking.DefaultMaxEntries,
-			0,
+			1,
 			BondDenom,
 		),
 	}
