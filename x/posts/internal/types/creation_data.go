@@ -23,8 +23,8 @@ type PostCreationPacketData struct {
 	PollData       *PollData         `json:"poll_data,omitempty"`
 }
 
-// NewPostCreationPocketData is a constructor function for PostCreationPacketData
-func NewPostCreationPocketData(message string, parentID PostID, allowsComments bool, subspace string,
+// NewPostCreationPacketData is a constructor function for PostCreationPacketData
+func NewPostCreationPacketData(message string, parentID PostID, allowsComments bool, subspace string,
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
 	medias PostMedias, pollData *PollData) PostCreationPacketData {
 	return PostCreationPacketData{

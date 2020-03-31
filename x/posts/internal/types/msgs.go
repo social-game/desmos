@@ -24,7 +24,7 @@ func NewMsgCreatePost(message string, parentID PostID, allowsComments bool, subs
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
 	medias PostMedias, pollData *PollData) MsgCreatePost {
 	return MsgCreatePost{
-		PostCreationPacketData: NewPostCreationPocketData(
+		PostCreationPacketData: NewPostCreationPacketData(
 			message, parentID, allowsComments, subspace, optionalData, owner, creationDate, medias, pollData,
 		),
 	}
