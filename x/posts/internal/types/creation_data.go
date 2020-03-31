@@ -10,8 +10,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// CreationData contains the data that can be sent while creating a new post
-type CreationData struct {
+// PostCreationPacketData contains the data that can be sent while creating a new post
+type PostCreationPacketData struct {
 	ParentID       PostID            `json:"parent_id"`
 	Message        string            `json:"message"`
 	AllowsComments bool              `json:"allows_comments"`
@@ -23,11 +23,11 @@ type CreationData struct {
 	PollData       *PollData         `json:"poll_data,omitempty"`
 }
 
-// NewCreationData is a constructor function for CreationData
-func NewCreationData(message string, parentID PostID, allowsComments bool, subspace string,
+// NewPostCreationPocketData is a constructor function for PostCreationPacketData
+func NewPostCreationPocketData(message string, parentID PostID, allowsComments bool, subspace string,
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
-	medias PostMedias, pollData *PollData) CreationData {
-	return CreationData{
+	medias PostMedias, pollData *PollData) PostCreationPacketData {
+	return PostCreationPacketData{
 		Message:        message,
 		ParentID:       parentID,
 		AllowsComments: allowsComments,
@@ -41,7 +41,7 @@ func NewCreationData(message string, parentID PostID, allowsComments bool, subsp
 }
 
 // String returns a string representation of FungibleTokenPacketData
-func (data CreationData) String() string {
+func (data PostCreationPacketData) String() string {
 	return fmt.Sprintf(`FungibleTokenPacketData:
 	ParentId:           %s
 	Message:            %s
@@ -65,7 +65,7 @@ func (data CreationData) String() string {
 }
 
 // ValidateBasic runs stateless checks on the creation data
-func (data CreationData) ValidateBasic() error {
+func (data PostCreationPacketData) ValidateBasic() error {
 	if data.Creator.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprintf("Invalid creator address: %s", data.Creator))
 	}
@@ -123,7 +123,7 @@ func (data CreationData) ValidateBasic() error {
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is done due to the fact that Amino does not respect omitempty clauses
-func (data CreationData) MarshalJSON() ([]byte, error) {
-	type temp CreationData
+func (data PostCreationPacketData) MarshalJSON() ([]byte, error) {
+	type temp PostCreationPacketData
 	return json.Marshal(temp(data))
 }

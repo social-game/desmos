@@ -13,7 +13,7 @@ import (
 var _ channelexported.PacketDataI = CreatePostPacketData{}
 
 type CreatePostPacketData struct {
-	CreationData
+	PostCreationPacketData
 	Timeout uint64 `json:"timeout" yaml:"timeout"`
 }
 
@@ -22,14 +22,14 @@ func (cppd CreatePostPacketData) String() string {
 	return fmt.Sprintf(`CreatePostPacketData:
 	%s
 	Timeout:            %d`,
-		cppd.CreationData,
+		cppd.PostCreationPacketData,
 		cppd.Timeout,
 	)
 }
 
 // ValidateBasic implements channelexported.PacketDataI
 func (cppd CreatePostPacketData) ValidateBasic() error {
-	if err := cppd.CreationData.ValidateBasic(); err != nil {
+	if err := cppd.PostCreationPacketData.ValidateBasic(); err != nil {
 		return err
 	}
 

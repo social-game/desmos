@@ -27,22 +27,22 @@ const (
 
 var (
 	// functions aliases
-	DecodeStore              = simulation.DecodeStore
+	NewHandler               = keeper.NewHandler
+	NewKeeper                = keeper.NewKeeper
+	NewQuerier               = keeper.NewQuerier
 	RandomizedGenState       = simulation.RandomizedGenState
 	WeightedOperations       = simulation.WeightedOperations
 	SimulateMsgCreateSession = simulation.SimulateMsgCreateSession
 	RandomSessionData        = simulation.RandomSessionData
+	DecodeStore              = simulation.DecodeStore
+	NewMsgCreateSession      = types.NewMsgCreateSession
+	ParseSessionID           = types.ParseSessionID
+	NewSession               = types.NewSession
 	RegisterCodec            = types.RegisterCodec
 	NewGenesisState          = types.NewGenesisState
 	DefaultGenesisState      = types.DefaultGenesisState
 	ValidateGenesis          = types.ValidateGenesis
 	SessionStoreKey          = types.SessionStoreKey
-	NewMsgCreateSession      = types.NewMsgCreateSession
-	ParseSessionID           = types.ParseSessionID
-	NewSession               = types.NewSession
-	NewQuerier               = keeper.NewQuerier
-	NewHandler               = keeper.NewHandler
-	NewKeeper                = keeper.NewKeeper
 
 	// variable aliases
 	ModuleCdc             = types.ModuleCdc
@@ -55,9 +55,9 @@ var (
 type (
 	Keeper           = keeper.Keeper
 	SessionData      = simulation.SessionData
-	GenesisState     = types.GenesisState
 	MsgCreateSession = types.MsgCreateSession
 	SessionID        = types.SessionID
 	Session          = types.Session
 	Sessions         = types.Sessions
+	GenesisState     = types.GenesisState
 )
