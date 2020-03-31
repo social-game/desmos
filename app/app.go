@@ -119,7 +119,7 @@ type DesmosApp struct {
 	GovKeeper      gov.Keeper
 	UpgradeKeeper  upgrade.Keeper
 	paramsKeeper   params.Keeper
-	IBCKeeper      ibc.Keeper
+	ibcKeeper      ibc.Keeper
 
 	// Custom modules
 	magpieKeeper magpie.Keeper
@@ -195,7 +195,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		appCodec, keys[slashing.StoreKey], &stakingKeeper, app.subspaces[slashing.ModuleName],
 	)
 	app.UpgradeKeeper = upgrade.NewKeeper(skipUpgradeHeights, keys[upgrade.StoreKey], appCodec, home)
-	app.IBCKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper)
+	app.ibcKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper)
 
 	// The FeeCollectionKeeper collects transaction fees and renders them to the fee distribution module
 	// app.feeCollectionKeeper = auth.NewFeeCollectionKeeper(cdc, app.keyFeeCollection)
@@ -217,7 +217,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Register custom modules
 	app.magpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
-	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.IBCKeeper.ChannelKeeper)
+	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -231,7 +231,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		distr.NewAppModule(app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
-		ibc.NewAppModule(app.IBCKeeper),
+		ibc.NewAppModule(app.ibcKeeper),
 
 		// Custom modules
 		magpie.NewAppModule(app.magpieKeeper, app.AccountKeeper),
