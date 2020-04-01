@@ -12,21 +12,22 @@ import (
 
 // PostCreationData contains the data that can be sent while creating a new post
 type PostCreationData struct {
-	ParentID       PostID            `json:"parent_id"`
-	Message        string            `json:"message"`
-	AllowsComments bool              `json:"allows_comments"`
-	Subspace       string            `json:"subspace"`
-	OptionalData   map[string]string `json:"optional_data,omitempty"`
-	Creator        sdk.AccAddress    `json:"creator"`
-	CreationDate   time.Time         `json:"creation_date"`
-	Medias         PostMedias        `json:"medias,omitempty"`
-	PollData       *PollData         `json:"poll_data,omitempty"`
+	ParentID       PostID         `json:"parent_id"`
+	Message        string         `json:"message"`
+	AllowsComments bool           `json:"allows_comments"`
+	Subspace       string         `json:"subspace"`
+	OptionalData   OptionalData   `json:"optional_data,omitempty"`
+	Creator        sdk.AccAddress `json:"creator"`
+	CreationDate   time.Time      `json:"creation_date"`
+	Medias         PostMedias     `json:"medias,omitempty"`
+	PollData       *PollData      `json:"poll_data,omitempty"`
 }
 
 // NewPostCreationData is a constructor function for PostCreationData
 func NewPostCreationData(message string, parentID PostID, allowsComments bool, subspace string,
 	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
 	medias PostMedias, pollData *PollData) PostCreationData {
+
 	return PostCreationData{
 		Message:        message,
 		ParentID:       parentID,
