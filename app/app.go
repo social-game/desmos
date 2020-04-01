@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -36,8 +37,7 @@ import (
 )
 
 const (
-	appName          = "desmos"
-	Bech32MainPrefix = "desmos"
+	appName = "desmos"
 )
 
 var (
@@ -305,16 +305,16 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 // SetupConfig sets up the given config as it should be for Desmos
 func SetupConfig(config *sdk.Config) {
 	config.SetBech32PrefixForAccount(
-		Bech32MainPrefix,
-		Bech32MainPrefix+sdk.PrefixPublic,
+		commons.Bech32MainPrefix,
+		commons.Bech32MainPrefix+sdk.PrefixPublic,
 	)
 	config.SetBech32PrefixForValidator(
-		Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator,
-		Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator+sdk.PrefixPublic,
+		commons.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator,
+		commons.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator+sdk.PrefixPublic,
 	)
 	config.SetBech32PrefixForConsensusNode(
-		Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus,
-		Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus+sdk.PrefixPublic,
+		commons.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus,
+		commons.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus+sdk.PrefixPublic,
 	)
 
 	// 852 is the international dialing code of Hong Kong

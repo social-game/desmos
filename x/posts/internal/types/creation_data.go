@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -120,11 +119,4 @@ func (data PostCreationData) ValidateBasic() error {
 	}
 
 	return nil
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-// This is done due to the fact that Amino does not respect omitempty clauses
-func (data PostCreationData) MarshalJSON() ([]byte, error) {
-	type temp PostCreationData
-	return json.Marshal(temp(data))
 }
