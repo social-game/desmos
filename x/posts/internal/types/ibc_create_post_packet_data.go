@@ -110,7 +110,9 @@ func (cppd CreatePostPacketData) ValidateBasic() error {
 
 // GetBytes implements channelexported.PacketDataI
 func (cppd CreatePostPacketData) GetBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(cppd))
+	json := sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(cppd))
+	println(string(json))
+	return json
 }
 
 // GetTimeoutHeight implements channelexported.PacketDataI
