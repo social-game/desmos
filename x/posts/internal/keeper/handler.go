@@ -28,7 +28,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgRegisterReaction(ctx, keeper, msg)
 
 		case channeltypes.MsgPacket:
-			var data types.CreatePostPacketData
+			var data types.PostCreationData
 			if err := types.ModuleCdc.UnmarshalJSON(msg.GetData(), &data); err != nil {
 				return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal post creation transfer packet data: %s", err.Error())
 			}
@@ -96,9 +96,9 @@ func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 
 // handleCreationPacketData handles a MsgPacket containing a CreatePostPacketData
 func handleCreationPacketData(
-	ctx sdk.Context, k Keeper, msg channeltypes.MsgPacket, data types.CreatePostPacketData,
+	ctx sdk.Context, k Keeper, msg channeltypes.MsgPacket, data types.PostCreationData,
 ) (*sdk.Result, error) {
-	result, err := handlePostCreationRequest(ctx, k, data.PostCreationData)
+	result, err := handlePostCreationRequest(ctx, k, data)
 	if err != nil {
 
 		if err := k.ChanCloseInit(ctx, msg.Packet.DestinationPort, msg.Packet.DestinationChannel); err != nil {

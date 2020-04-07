@@ -21,5 +21,5 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgRegisterReaction{}, "desmos/MsgRegisterReaction", nil)
 
 	// IBC Related
-	cdc.RegisterConcrete(CreatePostPacketData{}, "desmos/ibc/CreatePostPacketData", nil)
+	cdc.RegisterConcrete(PostCreationData{}, "ibc/desmos/PacketDataPostCreation", nil)
 }

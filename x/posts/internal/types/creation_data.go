@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -119,4 +120,15 @@ func (data PostCreationData) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// MarshalJSON implements json.Marshaler
+func (data PostCreationData) MarshalJSON() ([]byte, error) {
+	type tmp PostCreationData
+	return json.Marshal(tmp(data))
+}
+
+// GetBytes allows to use this inside an IBC packet
+func (data PostCreationData) GetBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(data))
 }
