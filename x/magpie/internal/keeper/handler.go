@@ -90,7 +90,7 @@ func handleMsgCreateSession(ctx sdk.Context, keeper Keeper, msg types.MsgCreateS
 
 	result := sdk.Result{
 		Data:   types.ModuleCdc.MustMarshalBinaryLengthPrefixed(session.SessionID),
-		Events: sdk.Events{createSessionEvent},
+		Events: sdk.Events{createSessionEvent}.ToABCIEvents(),
 	}
 	return &result, nil
 }

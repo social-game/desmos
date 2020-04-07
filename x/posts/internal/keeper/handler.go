@@ -28,13 +28,11 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgRegisterReaction(ctx, keeper, msg)
 
 		case channeltypes.MsgPacket:
-			switch data := msg.Data.(type) {
-			case types.CreatePostPacketData:
-				return handleCreationPacketData(ctx, keeper, msg, data)
-
-			default:
-				return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized posts transfer packet data type: %T", data)
+			var data types.CreatePostPacketData
+			if err := types.ModuleCdc.UnmarshalJSON(msg.GetData(), &data); err != nil {
+				return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal post creation transfer packet data: %s", err.Error())
 			}
+			return handleCreationPacketData(ctx, keeper, msg, data)
 
 		default:
 			errMsg := fmt.Sprintf("Unrecognized Posts message type: %v", msg.Type())
@@ -91,7 +89,7 @@ func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 
 	result := sdk.Result{
 		Data:   keeper.Cdc.MustMarshalBinaryLengthPrefixed(post.PostID),
-		Events: sdk.Events{createEvent},
+		Events: sdk.Events{createEvent}.ToABCIEvents(),
 	}
 	return &result, nil
 }
@@ -109,7 +107,7 @@ func handleCreationPacketData(
 		return nil, err
 	}
 
-	acknowledgement := types.AckDataCreation{}
+	acknowledgement := types.AckDataCreation{}.GetBytes()
 	if err := k.PacketExecuted(ctx, msg.Packet, acknowledgement); err != nil {
 		return nil, err
 	}
@@ -150,7 +148,7 @@ func handleMsgEditPost(ctx sdk.Context, keeper Keeper, msg types.MsgEditPost) (*
 
 	result := sdk.Result{
 		Data:   keeper.Cdc.MustMarshalBinaryLengthPrefixed(existing.PostID),
-		Events: sdk.Events{editEvent},
+		Events: sdk.Events{editEvent}.ToABCIEvents(),
 	}
 	return &result, nil
 }

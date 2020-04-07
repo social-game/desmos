@@ -28,7 +28,7 @@ func handleMsgRegisterReaction(ctx sdk.Context, keeper Keeper, msg types.MsgRegi
 
 	result := sdk.Result{
 		Data:   []byte("reaction registered properly"),
-		Events: sdk.Events{event},
+		Events: sdk.Events{event}.ToABCIEvents(),
 	}
 
 	return &result, nil
@@ -61,7 +61,7 @@ func handleMsgAddPostReaction(ctx sdk.Context, keeper Keeper, msg types.MsgAddPo
 
 	result := sdk.Result{
 		Data:   []byte("reaction added properly"),
-		Events: sdk.Events{event},
+		Events: sdk.Events{event}.ToABCIEvents(),
 	}
 	return &result, nil
 }
@@ -91,7 +91,7 @@ func handleMsgRemovePostReaction(ctx sdk.Context, keeper Keeper, msg types.MsgRe
 
 	result := sdk.Result{
 		Data:   []byte("reaction removed properly"),
-		Events: sdk.Events{event},
+		Events: sdk.Events{event}.ToABCIEvents(),
 	}
 	return &result, nil
 }

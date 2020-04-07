@@ -6,14 +6,9 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	channelexported "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/exported"
-	transferTypes "github.com/cosmos/cosmos-sdk/x/ibc/20-transfer/types"
 	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/tendermint/tendermint/libs/bech32"
 )
-
-var _ channelexported.PacketDataI = CreatePostPacketData{}
 
 // DesmosAddress is a wrapper around sdk.AccAddress to make sure that it is properly serialized
 // using the commons.Bech32MainPrefix prefix while getting signature bytes
@@ -72,55 +67,33 @@ func (aa DesmosAddress) String() string {
 // wanting to create a new post
 type CreatePostPacketData struct {
 	PostCreationData               // Include all the standard data
-	Creator          DesmosAddress `json:"creator"`                // Override the creator to make sure it has the proper prefix
-	Timeout          uint64        `json:"timeout" yaml:"timeout"` // Timeout of the packet
+	Creator          DesmosAddress `json:"creator"` // Override the creator to make sure it has the proper prefix
 }
 
 // NewCreatePostPacketData is the builder function for a new CreatePostPacketData
-func NewCreatePostPacketData(data PostCreationData, timeout uint64) CreatePostPacketData {
+func NewCreatePostPacketData(data PostCreationData) CreatePostPacketData {
 	return CreatePostPacketData{
 		PostCreationData: data,
 		Creator:          DesmosAddress{data.Creator},
-		Timeout:          timeout,
 	}
 }
 
 // String returns a string representation of FungibleTokenPacketData
 func (cppd CreatePostPacketData) String() string {
 	return fmt.Sprintf(`CreatePostPacketData:
-	%s
-	Timeout:            %d`,
+	%s`,
 		cppd.PostCreationData,
-		cppd.Timeout,
 	)
 }
 
 // ValidateBasic implements channelexported.PacketDataI
 func (cppd CreatePostPacketData) ValidateBasic() error {
-	if err := cppd.PostCreationData.ValidateBasic(); err != nil {
-		return err
-	}
-
-	if cppd.Timeout == 0 {
-		return sdkerrors.Wrap(transferTypes.ErrInvalidPacketTimeout, "timeout cannot be 0")
-	}
-
-	return nil
+	return cppd.PostCreationData.ValidateBasic()
 }
 
 // GetBytes implements channelexported.PacketDataI
 func (cppd CreatePostPacketData) GetBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(cppd))
-}
-
-// GetTimeoutHeight implements channelexported.PacketDataI
-func (cppd CreatePostPacketData) GetTimeoutHeight() uint64 {
-	return cppd.Timeout
-}
-
-// Type implements channelexported.PacketDataI
-func (cppd CreatePostPacketData) Type() string {
-	return "posts/create"
 }
 
 // MarshalJSON implements the json.Marshaler interface.

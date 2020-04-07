@@ -69,7 +69,7 @@ func handleMsgAnswerPollPost(ctx sdk.Context, keeper Keeper, msg types.MsgAnswer
 
 	result := sdk.Result{
 		Data:   keeper.Cdc.MustMarshalBinaryLengthPrefixed("Answered to poll correctly"),
-		Events: sdk.Events{answerEvent},
+		Events: sdk.Events{answerEvent}.ToABCIEvents(),
 	}
 	return &result, nil
 }
