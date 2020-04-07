@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d
-	github.com/cosmos/cosmos-sdk v0.34.4-0.20200406170659-df5badaf4c2b
+	github.com/cosmos/cosmos-sdk v0.34.4-0.20200407112048-9448610d9c59
 	github.com/gorilla/mux v1.7.4
 	github.com/otiai10/copy v1.1.1
 	github.com/spf13/cobra v0.0.7

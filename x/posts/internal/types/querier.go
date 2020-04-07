@@ -4,6 +4,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/desmos-labs/desmos/x/posts/internal/types/models"
 )
 
 // QueryPostsParams Params for query 'custom/posts/posts'
@@ -14,7 +15,7 @@ type QueryPostsParams struct {
 	SortBy    string // Field that should determine the sorting
 	SortOrder string // Either ascending or descending
 
-	ParentID       *PostID
+	ParentID       *models.PostID
 	CreationTime   *time.Time
 	AllowsComments *bool
 	Subspace       string
@@ -27,8 +28,8 @@ func DefaultQueryPostsParams(page, limit int) QueryPostsParams {
 		Page:  page,
 		Limit: limit,
 
-		SortBy:    PostSortByID,
-		SortOrder: PostSortOrderAscending,
+		SortBy:    models.PostSortByID,
+		SortOrder: models.PostSortOrderAscending,
 
 		ParentID:       nil,
 		CreationTime:   nil,

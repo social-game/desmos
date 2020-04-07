@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	QuerySessions             = keeper.QuerySessions
 	OpWeightMsgCreatePost     = simulation.OpWeightMsgCreatePost
 	EventTypeCreateSession    = types.EventTypeCreateSession
 	AttributeKeySessionID     = types.AttributeKeySessionID
@@ -53,11 +52,10 @@ var (
 )
 
 type (
-	Keeper           = keeper.Keeper
-	SessionData      = simulation.SessionData
-	SessionID        = types.SessionID
-	Session          = types.Session
-	Sessions         = types.Sessions
-	GenesisState     = types.GenesisState
-	MsgCreateSession = types.MsgCreateSession
+	Keeper       = keeper.Keeper
+	SessionData  = simulation.SessionData
+	SessionID    = types.SessionID
+	Session      = types.Session
+	Sessions     = types.Sessions
+	GenesisState = types.GenesisState
 )

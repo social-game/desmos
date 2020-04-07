@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	channel "github.com/cosmos/cosmos-sdk/x/ibc/04-channel"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
@@ -35,8 +36,8 @@ func SetupTestInput() (sdk.Context, keeper.Keeper) {
 	cdc := testCodec()
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
-	// TODO: Create a valid channel Keeper
-	return ctx, keeper.NewKeeper(cdc, keys[types.StoreKey], channel.Keeper{})
+	// TODO: Create a valid ChannelKeeper and ScopedKeeper
+	return ctx, keeper.NewKeeper(cdc, keys[types.StoreKey], channel.Keeper{}, capability.ScopedKeeper{})
 }
 
 func testCodec() *codec.Codec {

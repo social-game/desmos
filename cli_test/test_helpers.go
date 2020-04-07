@@ -11,6 +11,7 @@ import (
 	"time"
 
 	codecstd "github.com/cosmos/cosmos-sdk/codec/std"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/desmos-labs/desmos/app"
 	"github.com/desmos-labs/desmos/x/posts"
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,6 @@ import (
 
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/tests"
@@ -302,11 +302,11 @@ func (f *Fixtures) KeysAddRecoverHDPath(name, mnemonic string, account uint32, i
 }
 
 // KeysShow is desmoscli keys show
-func (f *Fixtures) KeysShow(name string, flags ...string) keys.KeyOutput {
+func (f *Fixtures) KeysShow(name string, flags ...string) keyring.KeyOutput {
 	cmd := fmt.Sprintf("%s keys show --keyring-backend=test --home=%s %s", f.DesmoscliBinary,
 		f.DesmoscliHome, name)
 	out, _ := tests.ExecuteT(f.T, addFlags(cmd, flags), "")
-	var ko keys.KeyOutput
+	var ko keyring.KeyOutput
 	err := clientkeys.UnmarshalJSON([]byte(out), &ko)
 	require.NoError(f.T, err)
 	return ko

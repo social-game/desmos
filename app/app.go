@@ -9,8 +9,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
+	transfer "github.com/cosmos/cosmos-sdk/x/ibc/20-transfer"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts"
@@ -114,16 +116,17 @@ type DesmosApp struct {
 	subspaces map[string]params.Subspace
 
 	// Keepers
-	AccountKeeper  auth.AccountKeeper
-	BankKeeper     bank.Keeper
-	SupplyKeeper   supply.Keeper
-	stakingKeeper  staking.Keeper
-	SlashingKeeper slashing.Keeper
-	DistrKeeper    distr.Keeper
-	GovKeeper      gov.Keeper
-	UpgradeKeeper  upgrade.Keeper
-	paramsKeeper   params.Keeper
-	ibcKeeper      ibc.Keeper
+	AccountKeeper    auth.AccountKeeper
+	BankKeeper       bank.Keeper
+	CapabilityKeeper *capability.Keeper
+	SupplyKeeper     supply.Keeper
+	stakingKeeper    staking.Keeper
+	SlashingKeeper   slashing.Keeper
+	DistrKeeper      distr.Keeper
+	GovKeeper        gov.Keeper
+	UpgradeKeeper    upgrade.Keeper
+	paramsKeeper     params.Keeper
+	ibcKeeper        ibc.Keeper
 
 	// Custom modules
 	magpieKeeper magpie.Keeper
@@ -153,6 +156,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey, bank.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, upgrade.StoreKey, ibc.StoreKey,
+		capability.StoreKey,
 
 		// Custom modules
 		magpie.StoreKey, posts.StoreKey,
@@ -176,6 +180,11 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
+
+	// add capability keeper and ScopeToModule for ibc module
+	app.CapabilityKeeper = capability.NewKeeper(appCodec, keys[capability.StoreKey])
+	scopedIBCKeeper := app.CapabilityKeeper.ScopeToModule(ibc.ModuleName)
+	scopedTransferKeeper := app.CapabilityKeeper.ScopeToModule(transfer.ModuleName)
 
 	// Add keepers
 	app.AccountKeeper = auth.NewAccountKeeper(
@@ -217,11 +226,11 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		staking.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
 	)
 
-	app.ibcKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper)
+	app.ibcKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper, scopedIBCKeeper)
 
 	// Register custom modules
 	app.magpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
-	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper)
+	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper, scopedTransferKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.

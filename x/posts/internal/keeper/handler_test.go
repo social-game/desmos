@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts/internal/keeper"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 	"github.com/stretchr/testify/require"
@@ -263,7 +264,7 @@ func Test_handleMsgEditPost(t *testing.T) {
 
 			// Valid response
 			if res != nil {
-				require.Contains(t, res.Events, sdk.NewEvent(
+				commons.RequireContainsEvent(t, res.Events, sdk.NewEvent(
 					types.EventTypePostEdited,
 					sdk.NewAttribute(types.AttributeKeyPostID, test.msg.PostID.String()),
 					sdk.NewAttribute(types.AttributeKeyPostEditTime, test.msg.EditDate.String()),
@@ -327,7 +328,7 @@ func Test_handleMsgAddPostReaction(t *testing.T) {
 
 			// Valid response
 			if res != nil {
-				require.Contains(t, res.Events, sdk.NewEvent(
+				commons.RequireContainsEvent(t, res.Events, sdk.NewEvent(
 					types.EventTypePostReactionAdded,
 					sdk.NewAttribute(types.AttributeKeyPostID, test.msg.PostID.String()),
 					sdk.NewAttribute(types.AttributeKeyPostReactionOwner, test.msg.User.String()),
@@ -406,7 +407,7 @@ func Test_handleMsgRemovePostReaction(t *testing.T) {
 
 			// Valid response
 			if res != nil {
-				require.Contains(t, res.Events, sdk.NewEvent(
+				commons.RequireContainsEvent(t, res.Events, sdk.NewEvent(
 					types.EventTypePostReactionRemoved,
 					sdk.NewAttribute(types.AttributeKeyPostID, test.msg.PostID.String()),
 					sdk.NewAttribute(types.AttributeKeyPostReactionOwner, test.msg.User.String()),
@@ -710,7 +711,7 @@ func Test_handleMsgRegisterReaction(t *testing.T) {
 
 			// Valid response
 			if res != nil {
-				require.Contains(t, res.Events, sdk.NewEvent(
+				commons.RequireContainsEvent(t, res.Events, sdk.NewEvent(
 					types.EventTypeRegisterReaction,
 					sdk.NewAttribute(types.AttributeKeyReactionCreator, test.msg.Creator.String()),
 					sdk.NewAttribute(types.AttributeKeyReactionShortCode, test.msg.ShortCode),

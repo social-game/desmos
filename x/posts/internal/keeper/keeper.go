@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/capability"
 	channel "github.com/cosmos/cosmos-sdk/x/ibc/04-channel"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -13,17 +14,19 @@ import (
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	StoreKey      sdk.StoreKey // Unexposed key to access store from sdk.Context
-	Cdc           *codec.Codec // The wire codec for binary encoding/decoding.
+	StoreKey      sdk.StoreKey
+	Cdc           *codec.Codec
 	channelKeeper channel.Keeper
+	scopedKeeper  capability.ScopedKeeper
 }
 
 // NewKeeper creates new instances of the magpie Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, ck channel.Keeper) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, ck channel.Keeper, sk capability.ScopedKeeper) Keeper {
 	return Keeper{
 		StoreKey:      storeKey,
 		Cdc:           cdc,
 		channelKeeper: ck,
+		scopedKeeper:  sk,
 	}
 }
 

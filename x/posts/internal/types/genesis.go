@@ -1,15 +1,21 @@
 package types
 
+import (
+	"github.com/desmos-labs/desmos/x/posts/internal/types/models"
+	"github.com/desmos-labs/desmos/x/posts/internal/types/models/polls"
+	"github.com/desmos-labs/desmos/x/posts/internal/types/models/reactions"
+)
+
 // GenesisState contains the data of the genesis state for the posts module
 type GenesisState struct {
-	Posts               Posts                    `json:"posts"`
-	PollAnswers         map[string]UserAnswers   `json:"poll_answers_details"`
-	PostReactions       map[string]PostReactions `json:"post_reactions"`
-	RegisteredReactions Reactions                `json:"registered_reactions"`
+	Posts               models.Posts                       `json:"posts"`
+	PollAnswers         map[string]polls.UserAnswers       `json:"poll_answers_details"`
+	PostReactions       map[string]reactions.PostReactions `json:"post_reactions"`
+	RegisteredReactions reactions.Reactions                `json:"registered_reactions"`
 }
 
 // NewGenesisState creates a new genesis state
-func NewGenesisState(posts Posts, postReactions map[string]PostReactions, registeredR Reactions) GenesisState {
+func NewGenesisState(posts models.Posts, postReactions map[string]reactions.PostReactions, registeredR reactions.Reactions) GenesisState {
 	return GenesisState{
 		Posts:               posts,
 		PostReactions:       postReactions,

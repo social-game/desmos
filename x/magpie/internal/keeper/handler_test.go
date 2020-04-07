@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/magpie/internal/keeper"
 	"github.com/desmos-labs/desmos/x/magpie/internal/types"
 	"github.com/stretchr/testify/require"
@@ -94,7 +95,7 @@ func Test_handleMsgCreateSession(t *testing.T) {
 				)
 
 				require.NotNil(t, res)
-				require.Contains(t, res.Events, creationEvent)
+				commons.RequireContainsEvent(t, res.Events, creationEvent)
 			}
 
 			// Invalid response
