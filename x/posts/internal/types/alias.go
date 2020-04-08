@@ -5,7 +5,6 @@ package types
 // based on functionality in github.com/rigelrozanski/multitool
 
 import (
-	"github.com/desmos-labs/desmos/x/posts/internal/types/ibc"
 	"github.com/desmos-labs/desmos/x/posts/internal/types/models"
 	"github.com/desmos-labs/desmos/x/posts/internal/types/models/common"
 	"github.com/desmos-labs/desmos/x/posts/internal/types/models/polls"
@@ -39,12 +38,25 @@ const (
 
 var (
 	// functions aliases
-	ParseAnswerID            = polls.ParseAnswerID
-	NewPollAnswer            = polls.NewPollAnswer
-	NewPollAnswers           = polls.NewPollAnswers
+	NewPostResponse          = models.NewPostResponse
+	RegisterModelsCodec      = models.RegisterModelsCodec
+	NewPostCreationData      = models.NewPostCreationData
+	PostStoreKey             = models.PostStoreKey
+	PostCommentsStoreKey     = models.PostCommentsStoreKey
+	PostReactionsStoreKey    = models.PostReactionsStoreKey
+	ReactionsStoreKey        = models.ReactionsStoreKey
+	PollAnswersStoreKey      = models.PollAnswersStoreKey
+	NewPost                  = models.NewPost
+	ParsePostID              = models.ParsePostID
+	NewPostMedia             = common.NewPostMedia
+	ValidateURI              = common.ValidateURI
+	NewPostMedias            = common.NewPostMedias
 	NewPollData              = polls.NewPollData
 	ArePollDataEquals        = polls.ArePollDataEquals
 	NewUserAnswer            = polls.NewUserAnswer
+	ParseAnswerID            = polls.ParseAnswerID
+	NewPollAnswer            = polls.NewPollAnswer
+	NewPollAnswers           = polls.NewPollAnswers
 	NewPostReaction          = reactions.NewPostReaction
 	NewReaction              = reactions.NewReaction
 	IsEmoji                  = reactions.IsEmoji
@@ -55,21 +67,9 @@ var (
 	NewMsgAddPostReaction    = msgs.NewMsgAddPostReaction
 	NewMsgRemovePostReaction = msgs.NewMsgRemovePostReaction
 	NewMsgRegisterReaction   = msgs.NewMsgRegisterReaction
-	NewPost                  = models.NewPost
-	ParsePostID              = models.ParsePostID
-	NewPostResponse          = models.NewPostResponse
-	RegisterModelsCodec      = models.RegisterModelsCodec
-	NewPostCreationData      = models.NewPostCreationData
-	PostStoreKey             = models.PostStoreKey
-	PostCommentsStoreKey     = models.PostCommentsStoreKey
-	PostReactionsStoreKey    = models.PostReactionsStoreKey
-	ReactionsStoreKey        = models.ReactionsStoreKey
-	PollAnswersStoreKey      = models.PollAnswersStoreKey
-	NewPostMedia             = common.NewPostMedia
-	ValidateURI              = common.ValidateURI
-	NewPostMedias            = common.NewPostMedias
 
 	// variable aliases
+	MsgsCodec                = msgs.MsgsCodec
 	ModelsCdc                = models.ModelsCdc
 	SubspaceRegEx            = common.SubspaceRegEx
 	HashtagRegEx             = common.HashtagRegEx
@@ -81,27 +81,9 @@ var (
 	PostReactionsStorePrefix = common.PostReactionsStorePrefix
 	ReactionsStorePrefix     = common.ReactionsStorePrefix
 	PollAnswersStorePrefix   = common.PollAnswersStorePrefix
-	MsgsCodec                = msgs.MsgsCodec
 )
 
 type (
-	Post                     = models.Post
-	Posts                    = models.Posts
-	PostID                   = models.PostID
-	PostIDs                  = models.PostIDs
-	PostQueryResponse        = models.PostQueryResponse
-	PostCreationData         = models.PostCreationData
-	PollAnswersQueryResponse = models.PollAnswersQueryResponse
-	PostMedia                = common.PostMedia
-	PostMedias               = common.PostMedias
-	OptionalData             = common.OptionalData
-	KeyValue                 = common.KeyValue
-	AnswerID                 = polls.AnswerID
-	PollAnswer               = polls.PollAnswer
-	PollAnswers              = polls.PollAnswers
-	PollData                 = polls.PollData
-	UserAnswer               = polls.UserAnswer
-	UserAnswers              = polls.UserAnswers
 	PostReaction             = reactions.PostReaction
 	PostReactions            = reactions.PostReactions
 	Reaction                 = reactions.Reaction
@@ -112,5 +94,21 @@ type (
 	MsgAddPostReaction       = msgs.MsgAddPostReaction
 	MsgRemovePostReaction    = msgs.MsgRemovePostReaction
 	MsgRegisterReaction      = msgs.MsgRegisterReaction
-	AckDataCreation          = ibc.AckDataCreation
+	PostQueryResponse        = models.PostQueryResponse
+	PostCreationData         = models.PostCreationData
+	PollAnswersQueryResponse = models.PollAnswersQueryResponse
+	Post                     = models.Post
+	Posts                    = models.Posts
+	PostID                   = models.PostID
+	PostIDs                  = models.PostIDs
+	PostMedia                = common.PostMedia
+	PostMedias               = common.PostMedias
+	OptionalData             = common.OptionalData
+	KeyValue                 = common.KeyValue
+	PollData                 = polls.PollData
+	UserAnswer               = polls.UserAnswer
+	UserAnswers              = polls.UserAnswers
+	AnswerID                 = polls.AnswerID
+	PollAnswer               = polls.PollAnswer
+	PollAnswers              = polls.PollAnswers
 )

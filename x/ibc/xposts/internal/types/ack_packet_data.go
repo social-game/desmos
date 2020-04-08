@@ -1,4 +1,4 @@
-package ibc
+package types
 
 // AckDataCreation is a no-op packet
 // See spec for onAcknowledgePacket: https://github.com/cosmos/ics/tree/master/spec/ics-020-fungible-token-transfer#packet-relay

@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/types"
 	"github.com/desmos-labs/desmos/x/posts/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +14,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgCreatePost:
-			return handlePostCreationRequest(ctx, keeper, msg.PostCreationData)
+			return HandlePostCreationRequest(ctx, keeper, msg.PostCreationData)
 		case types.MsgEditPost:
 			return handleMsgEditPost(ctx, keeper, msg)
 		case types.MsgAddPostReaction:
@@ -27,13 +26,6 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		case types.MsgRegisterReaction:
 			return handleMsgRegisterReaction(ctx, keeper, msg)
 
-		case channeltypes.MsgPacket:
-			var data types.PostCreationData
-			if err := types.ModuleCdc.UnmarshalJSON(msg.GetData(), &data); err != nil {
-				return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal post creation transfer packet data: %s", err.Error())
-			}
-			return handleCreationPacketData(ctx, keeper, msg, data)
-
 		default:
 			errMsg := fmt.Sprintf("Unrecognized Posts message type: %v", msg.Type())
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -41,8 +33,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-// handlePostCreationRequest handles the creation of a new post
-func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationData) (*sdk.Result, error) {
+// HandlePostCreationRequest handles the creation of a new post
+func HandlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationData) (*sdk.Result, error) {
 	post := types.NewPost(
 		keeper.GetLastPostID(ctx).Next(),
 		data.ParentID,
@@ -92,27 +84,6 @@ func handlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 		Events: sdk.Events{createEvent}.ToABCIEvents(),
 	}
 	return &result, nil
-}
-
-// handleCreationPacketData handles a MsgPacket containing a CreatePostPacketData
-func handleCreationPacketData(
-	ctx sdk.Context, k Keeper, msg channeltypes.MsgPacket, data types.PostCreationData,
-) (*sdk.Result, error) {
-	result, err := handlePostCreationRequest(ctx, k, data)
-	if err != nil {
-
-		if err := k.ChanCloseInit(ctx, msg.Packet.DestinationPort, msg.Packet.DestinationChannel); err != nil {
-			return nil, err
-		}
-		return nil, err
-	}
-
-	acknowledgement := types.AckDataCreation{}.GetBytes()
-	if err := k.PacketExecuted(ctx, msg.Packet, acknowledgement); err != nil {
-		return nil, err
-	}
-
-	return result, err
 }
 
 // handleMsgEditPost handles the edit of posts

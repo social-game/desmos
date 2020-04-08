@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
+	port "github.com/cosmos/cosmos-sdk/x/ibc/05-port"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts"
@@ -34,6 +35,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	ibcposts "github.com/desmos-labs/desmos/x/ibc/xposts"
 	"github.com/desmos-labs/desmos/x/magpie"
 )
 
@@ -115,21 +117,24 @@ type DesmosApp struct {
 	subspaces map[string]params.Subspace
 
 	// Keepers
-	AccountKeeper    auth.AccountKeeper
-	BankKeeper       bank.Keeper
-	CapabilityKeeper *capability.Keeper
-	SupplyKeeper     supply.Keeper
-	stakingKeeper    staking.Keeper
-	SlashingKeeper   slashing.Keeper
-	DistrKeeper      distr.Keeper
-	GovKeeper        gov.Keeper
-	UpgradeKeeper    upgrade.Keeper
-	paramsKeeper     params.Keeper
-	ibcKeeper        ibc.Keeper
+	AccountKeeper     auth.AccountKeeper
+	BankKeeper        bank.Keeper
+	CapabilityKeeper  *capability.Keeper
+	SupplyKeeper      supply.Keeper
+	stakingKeeper     staking.Keeper
+	SlashingKeeper    slashing.Keeper
+	DistrKeeper       distr.Keeper
+	GovKeeper         gov.Keeper
+	UpgradeKeeper     upgrade.Keeper
+	ParamsKeeper      params.Keeper
+	IBCKeeper         ibc.Keeper
+	ScopedIBCKeeper   capability.ScopedKeeper
+	ScopedPostsKeeper capability.ScopedKeeper
 
 	// Custom modules
-	magpieKeeper magpie.Keeper
-	postsKeeper  posts.Keeper
+	MagpieKeeper   magpie.Keeper
+	PostsKeeper    posts.Keeper
+	IBCPostsKeeper ibcposts.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -172,13 +177,13 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	}
 
 	// Init params keeper and subspaces
-	app.paramsKeeper = params.NewKeeper(appCodec, keys[params.StoreKey], tkeys[params.TStoreKey])
-	app.subspaces[auth.ModuleName] = app.paramsKeeper.Subspace(auth.DefaultParamspace)
-	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
-	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
-	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
-	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
-	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
+	app.ParamsKeeper = params.NewKeeper(appCodec, keys[params.StoreKey], tkeys[params.TStoreKey])
+	app.subspaces[auth.ModuleName] = app.ParamsKeeper.Subspace(auth.DefaultParamspace)
+	app.subspaces[bank.ModuleName] = app.ParamsKeeper.Subspace(bank.DefaultParamspace)
+	app.subspaces[staking.ModuleName] = app.ParamsKeeper.Subspace(staking.DefaultParamspace)
+	app.subspaces[distr.ModuleName] = app.ParamsKeeper.Subspace(distr.DefaultParamspace)
+	app.subspaces[slashing.ModuleName] = app.ParamsKeeper.Subspace(slashing.DefaultParamspace)
+	app.subspaces[gov.ModuleName] = app.ParamsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
 
 	// add capability keeper and ScopeToModule for ibc module
 	app.CapabilityKeeper = capability.NewKeeper(appCodec, keys[capability.StoreKey])
@@ -225,11 +230,19 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		staking.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
 	)
 
-	app.ibcKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper, scopedIBCKeeper)
+	app.IBCKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper, scopedIBCKeeper)
 
 	// Register custom modules
-	app.magpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
-	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper, scopedPostsKeeper)
+	app.MagpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
+	app.PostsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey])
+	app.IBCPostsKeeper = ibcposts.NewKeeper(app.PostsKeeper, app.IBCKeeper.ChannelKeeper, scopedPostsKeeper)
+
+	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
+
+	// Create static IBC router, add posts route, then set and seal it
+	ibcRouter := port.NewRouter()
+	ibcRouter.AddRoute(posts.ModuleName, ibcPostsModule)
+	app.IBCKeeper.SetRouter(ibcRouter)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -237,17 +250,21 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		genutil.NewAppModule(app.AccountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.AccountKeeper, app.SupplyKeeper),
 		bank.NewAppModule(app.BankKeeper, app.AccountKeeper),
+		capability.NewAppModule(*app.CapabilityKeeper),
 		supply.NewAppModule(app.SupplyKeeper, app.BankKeeper, app.AccountKeeper),
 		gov.NewAppModule(app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper),
 		slashing.NewAppModule(app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.stakingKeeper),
 		distr.NewAppModule(app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
-		ibc.NewAppModule(app.ibcKeeper),
+		ibc.NewAppModule(app.IBCKeeper),
 
 		// Custom modules
-		magpie.NewAppModule(app.magpieKeeper, app.AccountKeeper),
-		posts.NewAppModule(app.postsKeeper, app.AccountKeeper, app.BankKeeper),
+		magpie.NewAppModule(app.MagpieKeeper, app.AccountKeeper),
+		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
+
+		// IBC Modules
+		ibcPostsModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -282,8 +299,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		staking.NewAppModule(app.stakingKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper),
 
 		// Custom modules
-		posts.NewAppModule(app.postsKeeper, app.AccountKeeper, app.BankKeeper),
-		magpie.NewAppModule(app.magpieKeeper, app.AccountKeeper),
+		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
+		magpie.NewAppModule(app.MagpieKeeper, app.AccountKeeper),
 	)
 	app.sm.RegisterStoreDecoders()
 
@@ -295,7 +312,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(ante.NewAnteHandler(
-		app.AccountKeeper, app.SupplyKeeper, app.ibcKeeper,
+		app.AccountKeeper, app.SupplyKeeper, app.IBCKeeper,
 		auth.DefaultSigVerificationGasConsumer,
 	))
 	app.SetEndBlocker(app.EndBlocker)
@@ -306,6 +323,15 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			tmos.Exit(err.Error())
 		}
 	}
+
+	// Initialize and seal the capability keeper so all persistent capabilities
+	// are loaded in-memory and prevent any further modules from creating scoped
+	// sub-keepers.
+	ctx := app.BaseApp.NewContext(true, abci.Header{})
+	app.CapabilityKeeper.InitializeAndSeal(ctx)
+
+	app.ScopedIBCKeeper = scopedIBCKeeper
+	app.ScopedPostsKeeper = scopedPostsKeeper
 
 	return app
 }
