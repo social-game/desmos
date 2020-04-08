@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
-	transfer "github.com/cosmos/cosmos-sdk/x/ibc/20-transfer"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts"
@@ -184,7 +183,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// add capability keeper and ScopeToModule for ibc module
 	app.CapabilityKeeper = capability.NewKeeper(appCodec, keys[capability.StoreKey])
 	scopedIBCKeeper := app.CapabilityKeeper.ScopeToModule(ibc.ModuleName)
-	scopedTransferKeeper := app.CapabilityKeeper.ScopeToModule(transfer.ModuleName)
+	scopedPostsKeeper := app.CapabilityKeeper.ScopeToModule(posts.ModuleName)
 
 	// Add keepers
 	app.AccountKeeper = auth.NewAccountKeeper(
@@ -230,7 +229,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Register custom modules
 	app.magpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
-	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper, scopedTransferKeeper)
+	app.postsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey], app.ibcKeeper.ChannelKeeper, scopedPostsKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
