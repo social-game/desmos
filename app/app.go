@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	port "github.com/cosmos/cosmos-sdk/x/ibc/05-port"
+	transfer "github.com/cosmos/cosmos-sdk/x/ibc/20-transfer"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	"github.com/desmos-labs/desmos/x/commons"
 	"github.com/desmos-labs/desmos/x/posts"
@@ -69,6 +70,10 @@ var (
 		// Custom modules
 		magpie.AppModuleBasic{},
 		posts.AppModuleBasic{},
+
+		// IBC modules
+		ibcposts.AppModuleBasic{},
+		transfer.AppModuleBasic{},
 	)
 
 	// Module account permissions
@@ -78,6 +83,8 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
+
+		transfer.GetModuleAccountName(): {supply.Minter, supply.Burner},
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -117,24 +124,29 @@ type DesmosApp struct {
 	subspaces map[string]params.Subspace
 
 	// Keepers
-	AccountKeeper     auth.AccountKeeper
-	BankKeeper        bank.Keeper
-	CapabilityKeeper  *capability.Keeper
-	SupplyKeeper      supply.Keeper
-	stakingKeeper     staking.Keeper
-	SlashingKeeper    slashing.Keeper
-	DistrKeeper       distr.Keeper
-	GovKeeper         gov.Keeper
-	UpgradeKeeper     upgrade.Keeper
-	ParamsKeeper      params.Keeper
-	IBCKeeper         ibc.Keeper
-	ScopedIBCKeeper   capability.ScopedKeeper
-	ScopedPostsKeeper capability.ScopedKeeper
+	AccountKeeper    auth.AccountKeeper
+	BankKeeper       bank.Keeper
+	CapabilityKeeper *capability.Keeper
+	SupplyKeeper     supply.Keeper
+	stakingKeeper    staking.Keeper
+	SlashingKeeper   slashing.Keeper
+	DistrKeeper      distr.Keeper
+	GovKeeper        gov.Keeper
+	UpgradeKeeper    upgrade.Keeper
+	ParamsKeeper     params.Keeper
 
 	// Custom modules
-	MagpieKeeper   magpie.Keeper
-	PostsKeeper    posts.Keeper
+	MagpieKeeper magpie.Keeper
+	PostsKeeper  posts.Keeper
+
+	// IBC modules
+	IBCKeeper      ibc.Keeper
+	TransferKeeper transfer.Keeper
 	IBCPostsKeeper ibcposts.Keeper
+
+	ScopedIBCKeeper      capability.ScopedKeeper
+	ScopedTransferKeeper capability.ScopedKeeper
+	ScopedPostsKeeper    capability.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
@@ -160,7 +172,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey, bank.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, upgrade.StoreKey, ibc.StoreKey,
-		capability.StoreKey,
+		transfer.StoreKey, capability.StoreKey,
 
 		// Custom modules
 		magpie.StoreKey, posts.StoreKey,
@@ -188,7 +200,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// add capability keeper and ScopeToModule for ibc module
 	app.CapabilityKeeper = capability.NewKeeper(appCodec, keys[capability.StoreKey])
 	scopedIBCKeeper := app.CapabilityKeeper.ScopeToModule(ibc.ModuleName)
-	scopedPostsKeeper := app.CapabilityKeeper.ScopeToModule(posts.ModuleName)
+	scopedTransferKeeper := app.CapabilityKeeper.ScopeToModule(transfer.ModuleName)
+	scopedPostsKeeper := app.CapabilityKeeper.ScopeToModule(ibcposts.ModuleName)
 
 	// Add keepers
 	app.AccountKeeper = auth.NewAccountKeeper(
@@ -235,13 +248,22 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// Register custom modules
 	app.MagpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
 	app.PostsKeeper = posts.NewKeeper(app.cdc, keys[posts.StoreKey])
-	app.IBCPostsKeeper = ibcposts.NewKeeper(app.PostsKeeper, app.IBCKeeper.ChannelKeeper, scopedPostsKeeper)
 
+	// Create IBC modules
+	app.TransferKeeper = transfer.NewKeeper(
+		app.cdc, keys[transfer.StoreKey],
+		app.IBCKeeper.ChannelKeeper, app.BankKeeper, app.SupplyKeeper,
+		scopedTransferKeeper,
+	)
+	transferModule := transfer.NewAppModule(app.TransferKeeper)
+
+	app.IBCPostsKeeper = ibcposts.NewKeeper(app.PostsKeeper, app.IBCKeeper.ChannelKeeper, scopedPostsKeeper)
 	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
 
 	// Create static IBC router, add posts route, then set and seal it
 	ibcRouter := port.NewRouter()
-	ibcRouter.AddRoute(posts.ModuleName, ibcPostsModule)
+	ibcRouter.AddRoute(ibcposts.ModuleName, ibcPostsModule)
+	ibcRouter.AddRoute(transfer.ModuleName, transferModule)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -264,6 +286,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
 
 		// IBC Modules
+		transferModule,
 		ibcPostsModule,
 	)
 
@@ -331,6 +354,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.CapabilityKeeper.InitializeAndSeal(ctx)
 
 	app.ScopedIBCKeeper = scopedIBCKeeper
+	app.ScopedTransferKeeper = scopedTransferKeeper
 	app.ScopedPostsKeeper = scopedPostsKeeper
 
 	return app
