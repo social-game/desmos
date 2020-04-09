@@ -351,6 +351,10 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// are loaded in-memory and prevent any further modules from creating scoped
 	// sub-keepers.
 	ctx := app.BaseApp.NewContext(true, abci.Header{})
+
+	transferCap := app.IBCKeeper.PortKeeper.BindPort(ctx, "bank")
+	_ = scopedTransferKeeper.ClaimCapability(ctx, transferCap, transfer.ModuleName)
+
 	app.CapabilityKeeper.InitializeAndSeal(ctx)
 
 	app.ScopedIBCKeeper = scopedIBCKeeper
