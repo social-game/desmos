@@ -140,13 +140,9 @@ type DesmosApp struct {
 	PostsKeeper  posts.Keeper
 
 	// IBC modules
-	IBCKeeper      ibc.Keeper
+	IBCKeeper      *ibc.Keeper
 	TransferKeeper transfer.Keeper
 	IBCPostsKeeper ibcposts.Keeper
-
-	ScopedIBCKeeper      capability.ScopedKeeper
-	ScopedTransferKeeper capability.ScopedKeeper
-	ScopedPostsKeeper    capability.ScopedKeeper
 
 	// Module Manager
 	mm *module.Manager
@@ -177,7 +173,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		// Custom modules
 		magpie.StoreKey, posts.StoreKey,
 	)
-	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
+	tkeys := sdk.NewTransientStoreKeys(params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
 	var app = &DesmosApp{
@@ -243,7 +239,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		staking.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
 	)
 
-	app.IBCKeeper = ibc.NewKeeper(cdc, keys[ibc.StoreKey], app.stakingKeeper, scopedIBCKeeper)
+	app.IBCKeeper = ibc.NewKeeper(app.cdc, keys[ibc.StoreKey], app.stakingKeeper, scopedIBCKeeper)
 
 	// Register custom modules
 	app.MagpieKeeper = magpie.NewKeeper(app.cdc, keys[magpie.StoreKey])
@@ -252,12 +248,14 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// Create IBC modules
 	app.TransferKeeper = transfer.NewKeeper(
 		app.cdc, keys[transfer.StoreKey],
-		app.IBCKeeper.ChannelKeeper, app.BankKeeper, app.SupplyKeeper,
-		scopedTransferKeeper,
+		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
+		app.BankKeeper, app.SupplyKeeper, scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.TransferKeeper)
 
-	app.IBCPostsKeeper = ibcposts.NewKeeper(app.PostsKeeper, app.IBCKeeper.ChannelKeeper, scopedPostsKeeper)
+	app.IBCPostsKeeper = ibcposts.NewKeeper(
+		app.PostsKeeper, app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper, scopedPostsKeeper,
+	)
 	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
 
 	// Create static IBC router, add posts route, then set and seal it
@@ -279,13 +277,13 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		distr.NewAppModule(app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.AccountKeeper, app.BankKeeper, app.SupplyKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
-		ibc.NewAppModule(app.IBCKeeper),
 
 		// Custom modules
 		magpie.NewAppModule(app.MagpieKeeper, app.AccountKeeper),
 		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
 
 		// IBC Modules
+		ibc.NewAppModule(app.IBCKeeper),
 		transferModule,
 		ibcPostsModule,
 	)
@@ -305,6 +303,9 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		// Custom modules
 		magpie.ModuleName, posts.ModuleName,
+
+		// IBC modules
+		transfer.ModuleName, ibcposts.ModuleName,
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
@@ -335,7 +336,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(ante.NewAnteHandler(
-		app.AccountKeeper, app.SupplyKeeper, app.IBCKeeper,
+		app.AccountKeeper, app.SupplyKeeper, *app.IBCKeeper,
 		auth.DefaultSigVerificationGasConsumer,
 	))
 	app.SetEndBlocker(app.EndBlocker)
@@ -346,20 +347,6 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			tmos.Exit(err.Error())
 		}
 	}
-
-	// Initialize and seal the capability keeper so all persistent capabilities
-	// are loaded in-memory and prevent any further modules from creating scoped
-	// sub-keepers.
-	ctx := app.BaseApp.NewContext(true, abci.Header{})
-
-	transferCap := app.IBCKeeper.PortKeeper.BindPort(ctx, "bank")
-	_ = scopedTransferKeeper.ClaimCapability(ctx, transferCap, transfer.ModuleName)
-
-	app.CapabilityKeeper.InitializeAndSeal(ctx)
-
-	app.ScopedIBCKeeper = scopedIBCKeeper
-	app.ScopedTransferKeeper = scopedTransferKeeper
-	app.ScopedPostsKeeper = scopedPostsKeeper
 
 	return app
 }
