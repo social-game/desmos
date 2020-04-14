@@ -15,5 +15,3 @@ require (
 	github.com/tendermint/tm-db v0.5.1
 	github.com/tmdvs/Go-Emoji-Utils v1.1.0
 )
-
-replace github.com/cosmos/cosmos-sdk => /sda1/Coding/Cosmos/SDK
