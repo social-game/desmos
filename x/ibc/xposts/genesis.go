@@ -20,8 +20,6 @@ func DefaultGenesis() GenesisState {
 
 // InitGenesis sets ibc posts information for genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper) {
-	fmt.Println("IBC Posts init genesis")
-
 	// posts module binds to the posts port on InitChain
 	// and claims the returned capability
 	err := keeper.BindPort(ctx, PortID)
