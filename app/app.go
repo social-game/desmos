@@ -170,8 +170,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	keys := sdk.NewKVStoreKeys(
 		auth.StoreKey, bank.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
-		gov.StoreKey, params.StoreKey, ibc.StoreKey, upgrade.StoreKey,
-		transfer.StoreKey, capability.StoreKey,
+		gov.StoreKey, params.StoreKey, ibc.StoreKey, transfer.StoreKey,
+		upgrade.StoreKey, capability.StoreKey,
 
 		// Custom modules
 		magpie.StoreKey, posts.StoreKey,
@@ -257,7 +257,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	app.TransferKeeper = transfer.NewKeeper(
 		app.cdc, keys[transfer.StoreKey],
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
-		app.BankKeeper, app.SupplyKeeper, scopedTransferKeeper,
+		app.BankKeeper, app.SupplyKeeper,
+		scopedTransferKeeper,
 	)
 	transferModule := transfer.NewAppModule(app.TransferKeeper)
 
@@ -266,8 +267,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	// Create static IBC router, add posts route, then set and seal it
 	ibcRouter := port.NewRouter()
-	ibcRouter.AddRoute(ibcposts.ModuleName, ibcPostsModule)
 	ibcRouter.AddRoute(transfer.ModuleName, transferModule)
+	ibcRouter.AddRoute(ibcposts.ModuleName, ibcPostsModule)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -359,6 +360,12 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 			tmos.Exit(err.Error())
 		}
 	}
+
+	// Initialize and seal the capability keeper so all persistent capabilities
+	// are loaded in-memory and prevent any further modules from creating scoped
+	// sub-keepers.
+	ctx := app.BaseApp.NewContext(true, abci.Header{})
+	app.CapabilityKeeper.InitializeAndSeal(ctx)
 
 	return app
 }
