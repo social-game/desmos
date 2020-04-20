@@ -31,7 +31,11 @@ func NewKeeper(pk posts.Keeper, ck channel.Keeper, portK port.Keeper, sk capabil
 // PacketExecuted defines a wrapper function for the channel Keeper's function
 // in order to expose it to the ICS20 transfer handler.
 func (k Keeper) PacketExecuted(ctx sdk.Context, packet channelexported.PacketI, acknowledgement []byte) error {
-	return k.channelKeeper.PacketExecuted(ctx, packet, acknowledgement)
+	chanCap, ok := k.scopedKeeper.GetCapability(ctx, ibctypes.ChannelCapabilityPath(packet.GetDestPort(), packet.GetDestChannel()))
+	if !ok {
+		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, "channel capability could not be retrieved for packet")
+	}
+	return k.channelKeeper.PacketExecuted(ctx, chanCap, packet, acknowledgement)
 }
 
 // ChanCloseInit defines a wrapper function for the channel Keeper's function
@@ -48,8 +52,8 @@ func (k Keeper) ChanCloseInit(ctx sdk.Context, portID, channelID string) error {
 // BindPort defines a wrapper function for the ort Keeper's function in
 // order to expose it to module's InitGenesis function
 func (k Keeper) BindPort(ctx sdk.Context, portID string) error {
-	cap := k.portKeeper.BindPort(ctx, portID)
-	return k.ClaimCapability(ctx, cap, porttypes.PortPath(portID))
+	chanCap := k.portKeeper.BindPort(ctx, portID)
+	return k.ClaimCapability(ctx, chanCap, porttypes.PortPath(portID))
 }
 
 // ClaimCapability allows the transfer module that can claim a capability that IBC module
@@ -68,5 +72,9 @@ func (k Keeper) TimeoutTransfer(ctx sdk.Context, packet channel.Packet, data pos
 // TimeoutExecuted defines a wrapper function for the channel Keeper's function
 // in order to expose it to the ICS20 transfer handler.
 func (k Keeper) TimeoutExecuted(ctx sdk.Context, packet channelexported.PacketI) error {
-	return k.channelKeeper.TimeoutExecuted(ctx, packet)
+	chanCap, ok := k.scopedKeeper.GetCapability(ctx, ibctypes.ChannelCapabilityPath(packet.GetDestPort(), packet.GetDestChannel()))
+	if !ok {
+		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, "channel capability could not be retrieved for packet")
+	}
+	return k.channelKeeper.TimeoutExecuted(ctx, chanCap, packet)
 }
