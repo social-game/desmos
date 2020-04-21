@@ -17,6 +17,9 @@ const (
 	// RouterKey is the message route for IBC posts
 	RouterKey = ModuleName
 
+	// Key to store portID in our store
+	PortKey = "portID"
+
 	// QuerierRoute is the querier route for IBC posts
 	QuerierRoute = ModuleName
 )

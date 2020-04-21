@@ -171,6 +171,9 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 		// Custom modules
 		magpie.StoreKey, posts.StoreKey,
+
+		// IBC modules
+		ibcposts.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(params.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capability.MemStoreKey)
@@ -254,7 +257,10 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	)
 	transferModule := transfer.NewAppModule(app.TransferKeeper)
 
-	app.IBCPostsKeeper = ibcposts.NewKeeper(app.PostsKeeper, app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper, scopedPostsKeeper)
+	app.IBCPostsKeeper = ibcposts.NewKeeper(
+		app.cdc, keys[ibcposts.StoreKey], app.PostsKeeper,
+		app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper, scopedPostsKeeper,
+	)
 	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
 
 	// Create static IBC router, add posts route, then set and seal it

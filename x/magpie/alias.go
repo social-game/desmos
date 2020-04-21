@@ -27,6 +27,9 @@ const (
 
 var (
 	// functions aliases
+	NewQuerier               = keeper.NewQuerier
+	NewHandler               = keeper.NewHandler
+	NewKeeper                = keeper.NewKeeper
 	DecodeStore              = simulation.DecodeStore
 	RandomizedGenState       = simulation.RandomizedGenState
 	WeightedOperations       = simulation.WeightedOperations
@@ -40,9 +43,6 @@ var (
 	NewMsgCreateSession      = types.NewMsgCreateSession
 	ParseSessionID           = types.ParseSessionID
 	NewSession               = types.NewSession
-	NewHandler               = keeper.NewHandler
-	NewKeeper                = keeper.NewKeeper
-	NewQuerier               = keeper.NewQuerier
 
 	// variable aliases
 	RandomNamespaces      = simulation.RandomNamespaces

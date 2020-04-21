@@ -15,13 +15,15 @@ const (
 	PortID       = types.PortID
 	StoreKey     = types.StoreKey
 	RouterKey    = types.RouterKey
+	PortKey      = types.PortKey
 	QuerierRoute = types.QuerierRoute
 )
 
 var (
 	// functions aliases
-	NewKeeper     = keeper.NewKeeper
-	RegisterCodec = types.RegisterCodec
+	NewKeeper      = keeper.NewKeeper
+	RegisterCodec  = types.RegisterCodec
+	DefaultGenesis = types.DefaultGenesis
 
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
@@ -30,4 +32,5 @@ var (
 type (
 	Keeper          = keeper.Keeper
 	AckDataCreation = types.AckDataCreation
+	GenesisState    = types.GenesisState
 )

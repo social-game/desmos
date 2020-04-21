@@ -13,7 +13,6 @@ import (
 	channelexported "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/exported"
 	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/types"
 	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/05-port/types"
-	"github.com/cosmos/cosmos-sdk/x/ibc/20-transfer/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/types"
 	"github.com/desmos-labs/desmos/x/posts"
 	"github.com/gorilla/mux"
@@ -86,11 +85,6 @@ func NewAppModule(k Keeper, pk posts.Keeper) AppModule {
 	}
 }
 
-// Name returns the posts module's name.
-func (AppModule) Name() string {
-	return ModuleName
-}
-
 // RegisterInvariants performs a no-op.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
@@ -117,15 +111,19 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 // InitGenesis performs genesis initialization for the posts module. It returns
 // no validator updates.
-func (am AppModule) InitGenesis(ctx sdk.Context, _ codec.JSONMarshaler, _ json.RawMessage) []abci.ValidatorUpdate {
-	InitGenesis(ctx, am.keeper)
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState GenesisState
+	cdc.MustUnmarshalJSON(data, &genesisState)
+
+	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the auth
 // module.
-func (am AppModule) ExportGenesis(_ sdk.Context, _ codec.JSONMarshaler) json.RawMessage {
-	return nil
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
+	gs := ExportGenesis(ctx, am.keeper)
+	return cdc.MustMarshalJSON(gs)
 }
 
 // BeginBlock returns the begin blocker for the posts module.
@@ -143,8 +141,8 @@ func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Valid
 // Implement IBCModule callbacks
 func (am AppModule) OnChanOpenInit(
 	ctx sdk.Context,
-	_ channelexported.Order,
-	_ []string,
+	order channelexported.Order,
+	connectionHops []string,
 	portID string,
 	channelID string,
 	chanCap *capability.Capability,
@@ -153,8 +151,10 @@ func (am AppModule) OnChanOpenInit(
 ) error {
 	// TODO: Enforce ordering, currently relayers use ORDERED channels
 
-	if counterparty.PortID != PortID {
-		return sdkerrors.Wrapf(porttypes.ErrInvalidPort, "counterparty has invalid portid. expected: %s, got %s", PortID, counterparty.PortID)
+	// Require portID is the portID the posts module is bound to
+	boundPort := am.keeper.GetPort(ctx)
+	if boundPort != portID {
+		return sdkerrors.Wrapf(porttypes.ErrInvalidPort, "invalid port: %s, expected %s", portID, boundPort)
 	}
 
 	if version != Version {
@@ -183,8 +183,10 @@ func (am AppModule) OnChanOpenTry(
 ) error {
 	// TODO: Enforce ordering, currently relayers use ORDERED channels
 
-	if counterparty.PortID != PortID {
-		return sdkerrors.Wrapf(porttypes.ErrInvalidPort, "counterparty has invalid portid. expected: %s, got %s", PortID, counterparty.PortID)
+	// Require portID is the portID transfer module is bound to
+	boundPort := am.keeper.GetPort(ctx)
+	if boundPort != portID {
+		return sdkerrors.Wrapf(porttypes.ErrInvalidPort, "invalid port: %s, expected %s", portID, boundPort)
 	}
 
 	if version != Version {
@@ -225,7 +227,7 @@ func (am AppModule) OnChanCloseConfirm(_ sdk.Context, _, _ string) error {
 
 func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) (*sdk.Result, error) {
 	var data posts.PostCreationData
-	if err := types.ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
+	if err := ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
 	return handleCreationPacketData(ctx, am.keeper, am.postsKeeper, packet, data)
@@ -237,7 +239,7 @@ func (am AppModule) OnAcknowledgementPacket(_ sdk.Context, _ channeltypes.Packet
 
 func (am AppModule) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet) (*sdk.Result, error) {
 	var data posts.PostCreationData
-	if err := types.ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
+	if err := ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
 	}
 	return handleTimeoutDataTransfer(ctx, am.keeper, packet, data)
