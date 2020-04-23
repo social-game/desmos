@@ -238,9 +238,5 @@ func (am AppModule) OnAcknowledgementPacket(_ sdk.Context, _ channeltypes.Packet
 }
 
 func (am AppModule) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet) (*sdk.Result, error) {
-	var data posts.PostCreationData
-	if err := ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
-	}
-	return handleTimeoutDataTransfer(ctx, am.keeper, packet, data)
+	return nil, nil
 }

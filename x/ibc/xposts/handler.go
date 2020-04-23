@@ -39,23 +39,3 @@ func handleCreationPacketData(
 
 	return result, err
 }
-
-// See onTimeoutPacket in spec: https://github.com/cosmos/ics/tree/master/spec/ics-020-fungible-token-transfer#packet-relay
-func handleTimeoutDataTransfer(
-	ctx sdk.Context, k Keeper, packet channeltypes.Packet, data posts.PostCreationData,
-) (*sdk.Result, error) {
-	if err := k.TimeoutTransfer(ctx, packet, data); err != nil {
-		// This shouldn't happen, since we've already validated that we've sent the packet.
-		panic(err)
-	}
-
-	if err := k.TimeoutExecuted(ctx, packet); err != nil {
-		// This shouldn't happen, since we've already validated that we've sent the packet.
-		// TODO: Figure out what happens if the capability authorisation changes.
-		panic(err)
-	}
-
-	return &sdk.Result{
-		Events: ctx.EventManager().Events().ToABCIEvents(),
-	}, nil
-}

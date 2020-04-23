@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	channel "github.com/cosmos/cosmos-sdk/x/ibc/04-channel"
 	channelexported "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/exported"
-	port "github.com/cosmos/cosmos-sdk/x/ibc/05-port"
 	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/05-port/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/types"
 	"github.com/desmos-labs/desmos/x/ibc/xposts/internal/types"
@@ -19,14 +18,14 @@ type Keeper struct {
 	cdc      *codec.Codec
 
 	postsKeeper   posts.Keeper
-	channelKeeper channel.Keeper
-	portKeeper    port.Keeper
+	channelKeeper types.ChannelKeeper
+	portKeeper    types.PortKeeper
 	scopedKeeper  capability.ScopedKeeper
 }
 
 func NewKeeper(
-	cdc *codec.Codec, storeKey sdk.StoreKey,
-	pk posts.Keeper, ck channel.Keeper, portK port.Keeper, sk capability.ScopedKeeper,
+	cdc *codec.Codec, storeKey sdk.StoreKey, pk posts.Keeper,
+	ck types.ChannelKeeper, portK types.PortKeeper, sk capability.ScopedKeeper,
 ) Keeper {
 	return Keeper{
 		storeKey: storeKey,
@@ -81,21 +80,4 @@ func (k Keeper) GetPort(ctx sdk.Context) string {
 // passes to it
 func (k Keeper) ClaimCapability(ctx sdk.Context, cap *capability.Capability, name string) error {
 	return k.scopedKeeper.ClaimCapability(ctx, cap, name)
-}
-
-// TimeoutTransfer handles post creation timeout logic.
-func (k Keeper) TimeoutTransfer(ctx sdk.Context, packet channel.Packet, data posts.PostCreationData) error {
-	// TODO: Implement
-	return nil
-	//return k.onTimeoutPacket(ctx, packet, data)
-}
-
-// TimeoutExecuted defines a wrapper function for the channel Keeper's function
-// in order to expose it to the ICS20 transfer handler.
-func (k Keeper) TimeoutExecuted(ctx sdk.Context, packet channelexported.PacketI) error {
-	chanCap, ok := k.scopedKeeper.GetCapability(ctx, ibctypes.ChannelCapabilityPath(packet.GetDestPort(), packet.GetDestChannel()))
-	if !ok {
-		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, "channel capability could not be retrieved for packet")
-	}
-	return k.channelKeeper.TimeoutExecuted(ctx, chanCap, packet)
 }

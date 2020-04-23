@@ -110,7 +110,7 @@ var _ simapp.App = (*DesmosApp)(nil)
 
 // DesmosApp extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
-// capabilities arKen't needed for testing.
+// capabilities aren't needed for testing.
 type DesmosApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
@@ -259,7 +259,8 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 
 	app.IBCPostsKeeper = ibcposts.NewKeeper(
 		app.cdc, keys[ibcposts.StoreKey], app.PostsKeeper,
-		app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper, scopedPostsKeeper,
+		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
+		scopedPostsKeeper,
 	)
 	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
 
@@ -305,7 +306,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
-		auth.ModuleName, distr.ModuleName, staking.ModuleName, bank.ModuleName,
+		capability.ModuleName, auth.ModuleName, distr.ModuleName, staking.ModuleName, bank.ModuleName,
 		slashing.ModuleName, gov.ModuleName,
 		ibc.ModuleName, genutil.ModuleName, transfer.ModuleName,
 
