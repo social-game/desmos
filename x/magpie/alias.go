@@ -11,31 +11,30 @@ import (
 )
 
 const (
-	QuerySessions             = keeper.QuerySessions
-	OpWeightMsgCreatePost     = simulation.OpWeightMsgCreatePost
+	ModuleName                = types.ModuleName
+	RouterKey                 = types.RouterKey
+	StoreKey                  = types.StoreKey
+	ActionCreationSession     = types.ActionCreationSession
 	EventTypeCreateSession    = types.EventTypeCreateSession
 	AttributeKeySessionID     = types.AttributeKeySessionID
 	AttributeKeyNamespace     = types.AttributeKeyNamespace
 	AttributeKeyExternalOwner = types.AttributeKeyExternalOwner
 	AttributeKeyExpiry        = types.AttributeKeyExpiry
 	AttributeValueCategory    = types.AttributeValueCategory
-	ModuleName                = types.ModuleName
-	RouterKey                 = types.RouterKey
-	StoreKey                  = types.StoreKey
-	ActionCreationSession     = types.ActionCreationSession
+	QuerySessions             = keeper.QuerySessions
+	OpWeightMsgCreatePost     = simulation.OpWeightMsgCreatePost
 )
 
 var (
 	// functions aliases
-	NewQuerier               = keeper.NewQuerier
 	NewHandler               = keeper.NewHandler
 	NewKeeper                = keeper.NewKeeper
-	DecodeStore              = simulation.DecodeStore
-	RandomizedGenState       = simulation.RandomizedGenState
+	NewQuerier               = keeper.NewQuerier
 	WeightedOperations       = simulation.WeightedOperations
 	SimulateMsgCreateSession = simulation.SimulateMsgCreateSession
 	RandomSessionData        = simulation.RandomSessionData
-	RegisterCodec            = types.RegisterCodec
+	NewDecodeStore           = simulation.NewDecodeStore
+	RandomizedGenState       = simulation.RandomizedGenState
 	NewGenesisState          = types.NewGenesisState
 	DefaultGenesisState      = types.DefaultGenesisState
 	ValidateGenesis          = types.ValidateGenesis
@@ -43,13 +42,14 @@ var (
 	NewMsgCreateSession      = types.NewMsgCreateSession
 	ParseSessionID           = types.ParseSessionID
 	NewSession               = types.NewSession
+	RegisterCodec            = types.RegisterCodec
 
 	// variable aliases
 	RandomNamespaces      = simulation.RandomNamespaces
-	ModuleCdc             = types.ModuleCdc
 	SessionLengthKey      = types.SessionLengthKey
 	LastSessionIDStoreKey = types.LastSessionIDStoreKey
 	SessionStorePrefix    = types.SessionStorePrefix
+	ModuleCdc             = types.ModuleCdc
 )
 
 type (

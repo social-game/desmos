@@ -77,18 +77,22 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the posts module.
 type AppModule struct {
 	AppModuleBasic
+
+	cdc    *codec.Codec
 	ak     auth.AccountKeeper
 	bk     bank.Keeper
 	keeper Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(keeper Keeper, ak auth.AccountKeeper, bk bank.Keeper) AppModule {
+func NewAppModule(cdc *codec.Codec, keeper Keeper, ak auth.AccountKeeper, bk bank.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		ak:             ak,
-		bk:             bk,
-		keeper:         keeper,
+
+		cdc:    cdc,
+		ak:     ak,
+		bk:     bk,
+		keeper: keeper,
 	}
 }
 
@@ -167,8 +171,8 @@ func (AppModule) RandomizedParams(r *rand.Rand) []simulation.ParamChange {
 }
 
 // RegisterStoreDecoder performs a no-op.
-func (AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	sdr[ModuleName] = DecodeStore
+func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+	sdr[ModuleName] = NewDecodeStore(am.cdc)
 }
 
 // WeightedOperations returns the all the posts module operations with their respective weights.

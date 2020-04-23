@@ -76,14 +76,17 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the magpie module.
 type AppModule struct {
 	AppModuleBasic
+
+	cdc    *codec.Codec
 	keeper Keeper
 	ak     auth.AccountKeeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(keeper Keeper, accountKeeper auth.AccountKeeper) AppModule {
+func NewAppModule(cdc *codec.Codec, keeper Keeper, accountKeeper auth.AccountKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		cdc:            cdc,
 		keeper:         keeper,
 		ak:             accountKeeper,
 	}
@@ -163,8 +166,8 @@ func (AppModule) RandomizedParams(r *rand.Rand) []simulation.ParamChange {
 }
 
 // RegisterStoreDecoder performs a no-op.
-func (AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	sdr[ModuleName] = DecodeStore
+func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+	sdr[ModuleName] = NewDecodeStore(am.cdc)
 }
 
 // WeightedOperations returns the all the magpie module operations with their respective weights.

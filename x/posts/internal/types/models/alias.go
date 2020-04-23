@@ -45,9 +45,9 @@ var (
 	NewPollData       = polls.NewPollData
 	ArePollDataEquals = polls.ArePollDataEquals
 	NewUserAnswer     = polls.NewUserAnswer
+	NewPostReaction   = reactions.NewPostReaction
 	NewReaction       = reactions.NewReaction
 	IsEmoji           = reactions.IsEmoji
-	NewPostReaction   = reactions.NewPostReaction
 
 	// variable aliases
 	SubspaceRegEx            = common.SubspaceRegEx
@@ -73,8 +73,8 @@ type (
 	PollData      = polls.PollData
 	UserAnswer    = polls.UserAnswer
 	UserAnswers   = polls.UserAnswers
-	Reaction      = reactions.Reaction
-	Reactions     = reactions.Reactions
 	PostReaction  = reactions.PostReaction
 	PostReactions = reactions.PostReactions
+	Reaction      = reactions.Reaction
+	Reactions     = reactions.Reactions
 )

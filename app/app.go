@@ -273,20 +273,20 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// must be passed by reference here.
 	app.mm = module.NewManager(
 		genutil.NewAppModule(app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx),
-		auth.NewAppModule(app.AccountKeeper),
-		bank.NewAppModule(app.BankKeeper, app.AccountKeeper),
+		auth.NewAppModule(appCodec, app.AccountKeeper),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
 		capability.NewAppModule(*app.CapabilityKeeper),
-		gov.NewAppModule(app.GovKeeper, app.AccountKeeper, app.BankKeeper),
-		slashing.NewAppModule(app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-		distr.NewAppModule(app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-		staking.NewAppModule(app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
+		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 
 		// Custom modules
-		magpie.NewAppModule(app.MagpieKeeper, app.AccountKeeper),
-		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
+		magpie.NewAppModule(app.cdc, app.MagpieKeeper, app.AccountKeeper),
+		posts.NewAppModule(app.cdc, app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
 
 		// IBC Modules
 		transferModule,
@@ -323,17 +323,17 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
 	app.sm = module.NewSimulationManager(
-		auth.NewAppModule(app.AccountKeeper),
-		bank.NewAppModule(app.BankKeeper, app.AccountKeeper),
-		gov.NewAppModule(app.GovKeeper, app.AccountKeeper, app.BankKeeper),
-		staking.NewAppModule(app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
-		distr.NewAppModule(app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-		slashing.NewAppModule(app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		auth.NewAppModule(appCodec, app.AccountKeeper),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
+		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 
 		// Custom modules
-		posts.NewAppModule(app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
-		magpie.NewAppModule(app.MagpieKeeper, app.AccountKeeper),
+		posts.NewAppModule(app.cdc, app.PostsKeeper, app.AccountKeeper, app.BankKeeper),
+		magpie.NewAppModule(app.cdc, app.MagpieKeeper, app.AccountKeeper),
 	)
 	app.sm.RegisterStoreDecoders()
 

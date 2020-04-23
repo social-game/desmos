@@ -22,8 +22,8 @@ const (
 var (
 	// functions aliases
 	NewKeeper      = keeper.NewKeeper
-	RegisterCodec  = types.RegisterCodec
 	DefaultGenesis = types.DefaultGenesis
+	RegisterCodec  = types.RegisterCodec
 
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
@@ -31,6 +31,6 @@ var (
 
 type (
 	Keeper          = keeper.Keeper
-	AckDataCreation = types.AckDataCreation
 	GenesisState    = types.GenesisState
+	AckDataCreation = types.AckDataCreation
 )
