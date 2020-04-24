@@ -166,7 +166,6 @@ func (am AppModule) OnChanOpenInit(
 		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, err.Error())
 	}
 
-	// TODO: escrow
 	return nil
 }
 
@@ -202,7 +201,6 @@ func (am AppModule) OnChanOpenTry(
 		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, err.Error())
 	}
 
-	// TODO: escrow
 	return nil
 }
 
