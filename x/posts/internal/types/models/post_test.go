@@ -32,7 +32,7 @@ func TestPostID_Next(t *testing.T) {
 
 	for index, test := range tests {
 		test := test
-		t.Run(fmt.Sprintf("Test index: %d", index), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Test index: %dataType", index), func(t *testing.T) {
 			require.Equal(t, test.expected, test.id.Next())
 		})
 	}

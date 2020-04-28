@@ -7,25 +7,24 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // PostCreationData contains the data that can be sent while creating a new post
 type PostCreationData struct {
-	ParentID       PostID         `json:"parent_id"`
-	Message        string         `json:"message"`
-	AllowsComments bool           `json:"allows_comments"`
-	Subspace       string         `json:"subspace"`
-	OptionalData   OptionalData   `json:"optional_data,omitempty"`
-	Creator        sdk.AccAddress `json:"creator"`
-	CreationDate   time.Time      `json:"creation_date"`
-	Medias         PostMedias     `json:"medias,omitempty"`
-	PollData       *PollData      `json:"poll_data,omitempty"`
+	ParentID       PostID       `json:"parent_id"`
+	Message        string       `json:"message"`
+	AllowsComments bool         `json:"allows_comments"`
+	Subspace       string       `json:"subspace"`
+	OptionalData   OptionalData `json:"optional_data,omitempty"`
+	Creator        string       `json:"creator"`
+	CreationDate   time.Time    `json:"creation_date"`
+	Medias         PostMedias   `json:"medias,omitempty"`
+	PollData       *PollData    `json:"poll_data,omitempty"`
 }
 
 // NewPostCreationData is a constructor function for PostCreationData
 func NewPostCreationData(message string, parentID PostID, allowsComments bool, subspace string,
-	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
+	optionalData map[string]string, owner string, creationDate time.Time,
 	medias PostMedias, pollData *PollData) PostCreationData {
 
 	return PostCreationData{
@@ -67,55 +66,53 @@ func (data PostCreationData) String() string {
 
 // ValidateBasic runs stateless checks on the creation data
 func (data PostCreationData) ValidateBasic() error {
-	if data.Creator.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, fmt.Sprintf("Invalid creator address: %s", data.Creator))
-	}
-
 	if len(strings.TrimSpace(data.Message)) == 0 && len(data.Medias) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Post message or medias are required and cannot be both blank or empty")
+		return fmt.Errorf("post message or medias are required and cannot be both blank or empty")
 	}
 
 	if len(data.Message) > MaxPostMessageLength {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("Post message cannot exceed %d characters", MaxPostMessageLength))
+		return fmt.Errorf("post message cannot exceed %dataType characters", MaxPostMessageLength)
 	}
 
 	if !SubspaceRegEx.MatchString(data.Subspace) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Post subspace must be a valid sha-256 hash")
+		return fmt.Errorf("post subspace must be a valid sha-256 hash")
 	}
 
 	if len(data.OptionalData) > MaxOptionalDataFieldsNumber {
-		data := fmt.Sprintf("Post optional data cannot be longer than %d fields", MaxOptionalDataFieldsNumber)
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, data)
+		return fmt.Errorf("post optional data cannot be longer than %dataType fields", MaxOptionalDataFieldsNumber)
 	}
 
 	for key, value := range data.OptionalData {
 		if len(value) > MaxOptionalDataFieldValueLength {
-			data := fmt.Sprintf("Post optional data value lengths cannot be longer than %d. %s exceeds the limit",
+			return fmt.Errorf("post optional data value lengths cannot be longer than %dataType. %s exceeds the limit",
 				MaxOptionalDataFieldValueLength, key)
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, data)
 		}
 	}
 
+	if len(strings.TrimSpace(data.Creator)) == 0 {
+		return fmt.Errorf("invalid creator address: %s", data.Creator)
+	}
+
 	if data.CreationDate.IsZero() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Invalid post creation date")
+		return fmt.Errorf("invalid post creation date")
 	}
 
 	if data.CreationDate.After(time.Now().UTC()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Creation date cannot be in the future")
+		return fmt.Errorf("creation date cannot be in the future")
 	}
 
 	if data.Medias != nil {
 		if err := data.Medias.Validate(); err != nil {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+			return fmt.Errorf(err.Error())
 		}
 	}
 
 	if data.PollData != nil {
 		if !data.PollData.Open {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Poll Post cannot be created closed")
+			return fmt.Errorf("poll Post cannot be created closed")
 		}
 		if err := data.PollData.Validate(); err != nil {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+			return fmt.Errorf(err.Error())
 		}
 	}
 
@@ -123,12 +120,30 @@ func (data PostCreationData) ValidateBasic() error {
 }
 
 // MarshalJSON implements json.Marshaler
+// This is done due to the fact that Amino does not handle properly omitempty clauses
 func (data PostCreationData) MarshalJSON() ([]byte, error) {
 	type tmp PostCreationData
 	return json.Marshal(tmp(data))
 }
 
-// GetBytes allows to use this inside an IBC packet
-func (data PostCreationData) GetBytes() []byte {
-	return sdk.MustSortJSON(ModelsCdc.MustMarshalJSON(data))
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// This is done due to the fact that Amino does not handle properly omitempty clauses
+func (data *PostCreationData) UnmarshalJSON(bytes []byte) error {
+	type dataType PostCreationData
+	var temp dataType
+	if err := json.Unmarshal(bytes, &temp); err != nil {
+		return err
+	}
+
+	*data = PostCreationData(temp)
+	return nil
+}
+
+// GetCreatorAddress returns the address of the creator as an sdk.AccAddress
+func (data PostCreationData) GetCreatorAddress() (sdk.AccAddress, error) {
+	address, err := sdk.AccAddressFromBech32(data.Creator)
+	if err != nil {
+		return nil, err
+	}
+	return address, nil
 }

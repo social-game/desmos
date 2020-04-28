@@ -14,7 +14,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgCreatePost:
-			return HandlePostCreationRequest(ctx, keeper, msg.PostCreationData)
+			return handleMsgCreatePost(ctx, keeper, msg)
 		case types.MsgEditPost:
 			return handleMsgEditPost(ctx, keeper, msg)
 		case types.MsgAddPostReaction:
@@ -34,7 +34,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 // HandlePostCreationRequest handles the creation of a new post
-func HandlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationData) (*sdk.Result, error) {
+func HandlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCreationData) (*types.Post, error) {
+	addr, err := data.GetCreatorAddress()
+	if err != nil {
+		return nil, err
+	}
+
 	post := types.NewPost(
 		keeper.GetLastPostID(ctx).Next(),
 		data.ParentID,
@@ -43,7 +48,7 @@ func HandlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 		data.Subspace,
 		data.OptionalData,
 		data.CreationDate,
-		data.Creator,
+		addr,
 	).WithMedias(data.Medias)
 
 	if data.PollData != nil {
@@ -69,6 +74,16 @@ func HandlePostCreationRequest(ctx sdk.Context, keeper Keeper, data types.PostCr
 	}
 
 	keeper.SavePost(ctx, post)
+
+	return &post, nil
+}
+
+// handleMsgEditPost handles the creation of a post
+func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg types.MsgCreatePost) (*sdk.Result, error) {
+	post, err := HandlePostCreationRequest(ctx, keeper, msg.PostCreationData)
+	if err != nil {
+		return nil, err
+	}
 
 	createEvent := sdk.NewEvent(
 		types.EventTypePostCreated,

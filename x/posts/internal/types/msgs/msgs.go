@@ -22,11 +22,19 @@ type MsgCreatePost struct {
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
 func NewMsgCreatePost(message string, parentID models.PostID, allowsComments bool, subspace string,
-	optionalData map[string]string, owner sdk.AccAddress, creationDate time.Time,
+	optionalData map[string]string, owner string, creationDate time.Time,
 	medias models.PostMedias, pollData *models.PollData) MsgCreatePost {
 	return MsgCreatePost{
 		PostCreationData: models.NewPostCreationData(
-			message, parentID, allowsComments, subspace, optionalData, owner, creationDate, medias, pollData,
+			message,
+			parentID,
+			allowsComments,
+			subspace,
+			optionalData,
+			owner,
+			creationDate,
+			medias,
+			pollData,
 		),
 	}
 }
@@ -39,6 +47,11 @@ func (msg MsgCreatePost) Type() string { return models.ActionCreatePost }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreatePost) ValidateBasic() error {
+	_, err := msg.GetCreatorAddress()
+	if err != nil {
+		return err
+	}
+
 	return msg.PostCreationData.ValidateBasic()
 }
 
@@ -49,14 +62,29 @@ func (msg MsgCreatePost) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgCreatePost) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Creator}
+	addr, err := msg.GetCreatorAddress()
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{addr}
 }
 
 // MarshalJSON implements the json.Marshaler interface.
-// This is done due to the fact that Amino does not respect omitempty clauses
+// This is done due to the fact that Amino does not handle wrapper structs
 func (msg MsgCreatePost) MarshalJSON() ([]byte, error) {
-	type temp MsgCreatePost
-	return json.Marshal(temp(msg))
+	return msg.PostCreationData.MarshalJSON()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// This is done due to the fact that Amino does not handle wrapper structs
+func (msg *MsgCreatePost) UnmarshalJSON(bytes []byte) error {
+	var data models.PostCreationData
+	err := json.Unmarshal(bytes, &data)
+	if err != nil {
+		return err
+	}
+	*msg = MsgCreatePost{data}
+	return nil
 }
 
 // ----------------------

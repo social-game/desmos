@@ -1,4 +1,4 @@
-package xposts
+package posts
 
 import (
 	"fmt"

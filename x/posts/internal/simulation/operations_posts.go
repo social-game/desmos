@@ -38,7 +38,7 @@ func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper, bk bank.Keepe
 			data.AllowsComments,
 			data.Subspace,
 			data.OptionalData,
-			data.Creator.Address,
+			data.Creator.Address.String(),
 			data.CreationDate,
 			data.Medias,
 			data.PollData,
@@ -59,8 +59,13 @@ func sendMsgCreatePost(
 	msg types.MsgCreatePost, ctx sdk.Context, chainID string, privkeys []crypto.PrivKey,
 ) error {
 
-	account := ak.GetAccount(ctx, msg.Creator)
-	coins := bk.SpendableCoins(ctx, msg.Creator)
+	addr, err := msg.GetCreatorAddress()
+	if err != nil {
+		return err
+	}
+
+	account := ak.GetAccount(ctx, addr)
+	coins := bk.SpendableCoins(ctx, addr)
 
 	fees, err := sim.RandomFees(r, ctx, coins)
 	if err != nil {

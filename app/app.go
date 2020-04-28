@@ -36,7 +36,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
-	ibcposts "github.com/desmos-labs/desmos/x/ibc/xposts"
+	ibcposts "github.com/desmos-labs/desmos/x/ibc/posts"
 	"github.com/desmos-labs/desmos/x/magpie"
 )
 
@@ -262,7 +262,7 @@ func NewDesmosApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
 		scopedPostsKeeper,
 	)
-	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper, app.PostsKeeper)
+	ibcPostsModule := ibcposts.NewAppModule(app.IBCPostsKeeper)
 
 	// Create static IBC router, add posts route, then set and seal it
 	ibcRouter := port.NewRouter()

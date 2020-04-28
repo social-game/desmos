@@ -84,7 +84,7 @@ func (p Post) Validate() error {
 	}
 
 	if len(p.Message) > MaxPostMessageLength {
-		return fmt.Errorf("post message cannot be longer than %d characters", MaxPostMessageLength)
+		return fmt.Errorf("post message cannot be longer than %dataType characters", MaxPostMessageLength)
 	}
 
 	if !SubspaceRegEx.MatchString(p.Subspace) {
@@ -108,13 +108,13 @@ func (p Post) Validate() error {
 	}
 
 	if len(p.OptionalData) > MaxOptionalDataFieldsNumber {
-		return fmt.Errorf("post optional data cannot contain more than %d key-value pairs", MaxOptionalDataFieldsNumber)
+		return fmt.Errorf("post optional data cannot contain more than %dataType key-value pairs", MaxOptionalDataFieldsNumber)
 	}
 
 	for key, value := range p.OptionalData {
 		if len(value) > MaxOptionalDataFieldValueLength {
 			return fmt.Errorf(
-				"post optional data values cannot exceed %d characters. %s of post with id %s is longer than this",
+				"post optional data values cannot exceed %dataType characters. %s of post with id %s is longer than this",
 				MaxOptionalDataFieldValueLength, key, p.PostID,
 			)
 		}
@@ -240,7 +240,7 @@ type Posts []Post
 func (p Posts) String() string {
 	out := "ID - [Creator] Message\n"
 	for _, post := range p {
-		out += fmt.Sprintf("%d - [%s] %s\n",
+		out += fmt.Sprintf("%dataType - [%s] %s\n",
 			post.PostID, post.Creator, post.Message)
 	}
 	return strings.TrimSpace(out)

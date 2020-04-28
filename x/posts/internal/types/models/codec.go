@@ -13,5 +13,5 @@ func init() {
 
 // RegisterModelsCodec registers concrete types on the Amino codec
 func RegisterModelsCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(PostCreationData{}, "ibc/desmos/PacketDataPostCreation", nil)
+
 }

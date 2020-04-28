@@ -9,15 +9,24 @@ import (
 	channelexported "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/exported"
 	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/05-port/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/types"
-	"github.com/desmos-labs/desmos/x/ibc/xposts/internal/types"
+	"github.com/desmos-labs/desmos/x/ibc/posts/internal/types"
 	"github.com/desmos-labs/desmos/x/posts"
+)
+
+const (
+	// DefaultPacketTimeout is the default packet timeout relative to the current block height
+	DefaultPacketTimeout = 1000 // NOTE: in blocks
+
+	// DefaultPacketTimeoutTimestamp is the default packet timeout timestamp relative
+	// to the current block timestamp. The timeout is disabled when set to 0.
+	DefaultPacketTimeoutTimestamp = 0 // NOTE: in nanoseconds
 )
 
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 
-	postsKeeper   posts.Keeper
+	PostsKeeper   posts.Keeper
 	channelKeeper types.ChannelKeeper
 	portKeeper    types.PortKeeper
 	scopedKeeper  capability.ScopedKeeper
@@ -31,7 +40,7 @@ func NewKeeper(
 		storeKey: storeKey,
 		cdc:      cdc,
 
-		postsKeeper:   pk,
+		PostsKeeper:   pk,
 		channelKeeper: ck,
 		portKeeper:    portK,
 		scopedKeeper:  sk,
@@ -80,4 +89,62 @@ func (k Keeper) GetPort(ctx sdk.Context) string {
 // passes to it
 func (k Keeper) ClaimCapability(ctx sdk.Context, cap *capability.Capability, name string) error {
 	return k.scopedKeeper.ClaimCapability(ctx, cap, name)
+}
+
+// SendPostCreation allows to create an IBC packet containing the data of the
+// post to create into a Desmos-based chain through IBC
+func (k Keeper) SendPostCreation(
+	ctx sdk.Context,
+	sourcePort,
+	sourceChannel string,
+	destHeight uint64,
+
+	data types.PostCreationPacketData,
+) error {
+	sourceChannelEnd, found := k.channelKeeper.GetChannel(ctx, sourcePort, sourceChannel)
+	if !found {
+		return sdkerrors.Wrap(channel.ErrChannelNotFound, sourceChannel)
+	}
+
+	destinationPort := sourceChannelEnd.Counterparty.PortID
+	destinationChannel := sourceChannelEnd.Counterparty.ChannelID
+
+	// get the next sequence
+	sequence, found := k.channelKeeper.GetNextSequenceSend(ctx, sourcePort, sourceChannel)
+	if !found {
+		return channel.ErrSequenceSendNotFound
+	}
+
+	return k.createOutgoingPacket(
+		ctx, sequence, sourcePort, sourceChannel, destinationPort, destinationChannel, destHeight,
+		data,
+	)
+}
+
+func (k Keeper) createOutgoingPacket(
+	ctx sdk.Context,
+	seq uint64,
+	sourcePort, sourceChannel,
+	destinationPort, destinationChannel string,
+	destHeight uint64,
+
+	data types.PostCreationPacketData,
+) error {
+	channelCap, ok := k.scopedKeeper.GetCapability(ctx, ibctypes.ChannelCapabilityPath(sourcePort, sourceChannel))
+	if !ok {
+		return sdkerrors.Wrap(channel.ErrChannelCapabilityNotFound, "module does not own channel capability")
+	}
+
+	packet := channel.NewPacket(
+		data.GetBytes(),
+		seq,
+		sourcePort,
+		sourceChannel,
+		destinationPort,
+		destinationChannel,
+		destHeight+DefaultPacketTimeout,
+		DefaultPacketTimeoutTimestamp,
+	)
+
+	return k.channelKeeper.SendPacket(ctx, channelCap, packet)
 }

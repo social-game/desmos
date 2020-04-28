@@ -1,4 +1,4 @@
-package xposts
+package posts
 
 import (
 	"encoding/json"
@@ -14,7 +14,6 @@ import (
 	channeltypes "github.com/cosmos/cosmos-sdk/x/ibc/04-channel/types"
 	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/05-port/types"
 	ibctypes "github.com/cosmos/cosmos-sdk/x/ibc/types"
-	"github.com/desmos-labs/desmos/x/posts"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -72,16 +71,14 @@ func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the posts module.
 type AppModule struct {
 	AppModuleBasic
-	keeper      Keeper
-	postsKeeper posts.Keeper
+	keeper Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, pk posts.Keeper) AppModule {
+func NewAppModule(k Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		postsKeeper:    pk,
 	}
 }
 
@@ -224,11 +221,11 @@ func (am AppModule) OnChanCloseConfirm(_ sdk.Context, _, _ string) error {
 }
 
 func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) (*sdk.Result, error) {
-	var data posts.PostCreationData
-	if err := ModuleCdc.UnmarshalBinaryBare(packet.GetData(), &data); err != nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet data: %s", err.Error())
+	var data PostCreationPacketData
+	if err := ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal post creation packet data: %s", err.Error())
 	}
-	return handleCreationPacketData(ctx, am.keeper, am.postsKeeper, packet, data)
+	return handleCreationPacketData(ctx, am.keeper, packet, data)
 }
 
 func (am AppModule) OnAcknowledgementPacket(_ sdk.Context, _ channeltypes.Packet, _ []byte) (*sdk.Result, error) {

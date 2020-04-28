@@ -39,15 +39,15 @@ var (
 	NewPostMedia      = common.NewPostMedia
 	ValidateURI       = common.ValidateURI
 	NewPostMedias     = common.NewPostMedias
-	ParseAnswerID     = polls.ParseAnswerID
-	NewPollAnswer     = polls.NewPollAnswer
-	NewPollAnswers    = polls.NewPollAnswers
 	NewPollData       = polls.NewPollData
 	ArePollDataEquals = polls.ArePollDataEquals
 	NewUserAnswer     = polls.NewUserAnswer
-	NewPostReaction   = reactions.NewPostReaction
+	ParseAnswerID     = polls.ParseAnswerID
+	NewPollAnswer     = polls.NewPollAnswer
+	NewPollAnswers    = polls.NewPollAnswers
 	NewReaction       = reactions.NewReaction
 	IsEmoji           = reactions.IsEmoji
+	NewPostReaction   = reactions.NewPostReaction
 
 	// variable aliases
 	SubspaceRegEx            = common.SubspaceRegEx
@@ -67,14 +67,14 @@ type (
 	PostMedias    = common.PostMedias
 	OptionalData  = common.OptionalData
 	KeyValue      = common.KeyValue
-	AnswerID      = polls.AnswerID
-	PollAnswer    = polls.PollAnswer
-	PollAnswers   = polls.PollAnswers
 	PollData      = polls.PollData
 	UserAnswer    = polls.UserAnswer
 	UserAnswers   = polls.UserAnswers
-	PostReaction  = reactions.PostReaction
-	PostReactions = reactions.PostReactions
+	AnswerID      = polls.AnswerID
+	PollAnswer    = polls.PollAnswer
+	PollAnswers   = polls.PollAnswers
 	Reaction      = reactions.Reaction
 	Reactions     = reactions.Reactions
+	PostReaction  = reactions.PostReaction
+	PostReactions = reactions.PostReactions
 )

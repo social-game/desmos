@@ -211,7 +211,7 @@ E.g.
 				allowsComments,
 				args[0],
 				map[string]string{},
-				cliCtx.GetFromAddress(),
+				cliCtx.GetFromAddress().String(),
 				time.Now().UTC(),
 				medias,
 				pollData,

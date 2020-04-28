@@ -11,18 +11,18 @@ import (
 )
 
 const (
-	ModuleName                = types.ModuleName
-	RouterKey                 = types.RouterKey
-	StoreKey                  = types.StoreKey
-	ActionCreationSession     = types.ActionCreationSession
+	QuerySessions             = keeper.QuerySessions
+	OpWeightMsgCreatePost     = simulation.OpWeightMsgCreatePost
 	EventTypeCreateSession    = types.EventTypeCreateSession
 	AttributeKeySessionID     = types.AttributeKeySessionID
 	AttributeKeyNamespace     = types.AttributeKeyNamespace
 	AttributeKeyExternalOwner = types.AttributeKeyExternalOwner
 	AttributeKeyExpiry        = types.AttributeKeyExpiry
 	AttributeValueCategory    = types.AttributeValueCategory
-	QuerySessions             = keeper.QuerySessions
-	OpWeightMsgCreatePost     = simulation.OpWeightMsgCreatePost
+	ModuleName                = types.ModuleName
+	RouterKey                 = types.RouterKey
+	StoreKey                  = types.StoreKey
+	ActionCreationSession     = types.ActionCreationSession
 )
 
 var (
@@ -30,11 +30,12 @@ var (
 	NewHandler               = keeper.NewHandler
 	NewKeeper                = keeper.NewKeeper
 	NewQuerier               = keeper.NewQuerier
+	RandomizedGenState       = simulation.RandomizedGenState
 	WeightedOperations       = simulation.WeightedOperations
 	SimulateMsgCreateSession = simulation.SimulateMsgCreateSession
 	RandomSessionData        = simulation.RandomSessionData
 	NewDecodeStore           = simulation.NewDecodeStore
-	RandomizedGenState       = simulation.RandomizedGenState
+	RegisterCodec            = types.RegisterCodec
 	NewGenesisState          = types.NewGenesisState
 	DefaultGenesisState      = types.DefaultGenesisState
 	ValidateGenesis          = types.ValidateGenesis
@@ -42,14 +43,13 @@ var (
 	NewMsgCreateSession      = types.NewMsgCreateSession
 	ParseSessionID           = types.ParseSessionID
 	NewSession               = types.NewSession
-	RegisterCodec            = types.RegisterCodec
 
 	// variable aliases
 	RandomNamespaces      = simulation.RandomNamespaces
+	ModuleCdc             = types.ModuleCdc
 	SessionLengthKey      = types.SessionLengthKey
 	LastSessionIDStoreKey = types.LastSessionIDStoreKey
 	SessionStorePrefix    = types.SessionStorePrefix
-	ModuleCdc             = types.ModuleCdc
 )
 
 type (
