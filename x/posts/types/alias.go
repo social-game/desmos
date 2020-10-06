@@ -6,6 +6,7 @@ package types
 import (
 	"github.com/desmos-labs/desmos/x/posts/types/models"
 	"github.com/desmos-labs/desmos/x/posts/types/models/common"
+	"github.com/desmos-labs/desmos/x/posts/types/models/games"
 	"github.com/desmos-labs/desmos/x/posts/types/models/polls"
 	"github.com/desmos-labs/desmos/x/posts/types/models/reactions"
 	"github.com/desmos-labs/desmos/x/posts/types/msgs"
@@ -66,9 +67,15 @@ var (
 	NewPollAnswer              = polls.NewPollAnswer
 	NewPollAnswers             = polls.NewPollAnswers
 	NewPollData                = polls.NewPollData
-	ArePollDataEquals          = polls.ArePollDataEquals
-	NewUserAnswer              = polls.NewUserAnswer
-	NewUserAnswers             = polls.NewUserAnswers
+	// game
+	NewGameAnswer  = games.NewGameAnswer
+	NewGameAnswers = games.NewGameAnswers
+	NewGameData    = games.NewGameData
+	//game
+
+	ArePollDataEquals = polls.ArePollDataEquals
+	NewUserAnswer     = polls.NewUserAnswer
+	NewUserAnswers    = polls.NewUserAnswers
 
 	// variable aliases
 	ModelsCdc                = models.ModelsCdc
@@ -84,14 +91,20 @@ var (
 )
 
 type (
-	OptionalData             = common.OptionalData
-	KeyValue                 = common.KeyValue
-	Attachment               = common.Attachment
-	Attachments              = common.Attachments
-	AnswerID                 = polls.AnswerID
-	PollAnswer               = polls.PollAnswer
-	PollAnswers              = polls.PollAnswers
-	PollData                 = polls.PollData
+	OptionalData = common.OptionalData
+	KeyValue     = common.KeyValue
+	Attachment   = common.Attachment
+	Attachments  = common.Attachments
+	AnswerID     = polls.AnswerID
+	PollAnswer   = polls.PollAnswer
+	PollAnswers  = polls.PollAnswers
+	PollData     = polls.PollData
+	//game
+	GameAnswerID = games.AnswerID
+	GameAnswer   = games.GameAnswer
+	GameAnswers  = games.GameAnswers
+	GameData     = games.GameData
+	//game
 	UserAnswer               = polls.UserAnswer
 	UserAnswers              = polls.UserAnswers
 	PostReaction             = reactions.PostReaction
@@ -110,4 +123,6 @@ type (
 	Posts                    = models.Posts
 	PostQueryResponse        = models.PostQueryResponse
 	PollAnswersQueryResponse = models.PollAnswersQueryResponse
+	//game
+	GameAnswersQueryResponse = models.PollAnswersQueryResponse
 )

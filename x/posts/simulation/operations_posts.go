@@ -38,6 +38,7 @@ func SimulateMsgCreatePost(k keeper.Keeper, ak auth.AccountKeeper) sim.Operation
 			data.Creator.Address,
 			data.Attachments,
 			data.PollData,
+			nil,
 		)
 
 		err := sendMsgCreatePost(r, app, ak, msg, ctx, chainID, []crypto.PrivKey{data.Creator.PrivKey})

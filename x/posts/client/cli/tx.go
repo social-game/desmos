@@ -77,6 +77,79 @@ func getAttachments(cmd *cobra.Command) (types.Attachments, error) {
 	return attachments, nil
 }
 
+func getGameData(cmd *cobra.Command) (*types.GameData, error) {
+	gameDetailsMap, err := cmd.Flags().GetStringToString(flagGameDetails)
+	if err != nil {
+		return nil, fmt.Errorf("invalid %s value", flagGameDetails)
+	}
+
+	gameAnswersSlice := viper.GetStringSlice(flagGameAnswer)
+	if len(gameDetailsMap) == 0 && len(gameAnswersSlice) > 0 {
+		return nil, fmt.Errorf("game answers specified but no game details found. Please use %s to specify the game details", flagGameDetails)
+	}
+
+	if len(gameDetailsMap) > 0 && len(gameAnswersSlice) == 0 {
+		return nil, fmt.Errorf("game details specified but answers are not. Please use the %s to specify one or more answer", flagGameAnswer)
+	}
+
+	var gameData *types.GameData
+
+	if len(gameDetailsMap) > 0 && len(gameAnswersSlice) > 0 {
+		date, err := time.Parse(time.RFC3339, gameDetailsMap[keyEndDate])
+		if err != nil {
+			return nil, fmt.Errorf(
+				"end date should be provided in RFC3339 format, e.g 2020-01-01T12:00:00Z, %s found",
+				gameDetailsMap[keyEndDate],
+			)
+		}
+
+		if date.Before(time.Now().UTC()) {
+			return nil, fmt.Errorf("poll's end date can't be in the past")
+		}
+
+		if len(strings.TrimSpace(gameDetailsMap[keyQuestion])) == 0 {
+			return nil, fmt.Errorf("question should be provided and not be empty")
+		}
+
+		question := gameDetailsMap[keyQuestion]
+
+		allowMultipleAnswers, err := strconv.ParseBool(gameDetailsMap[keyMultipleAnswers])
+		if err != nil {
+			return nil, fmt.Errorf("multiple-answers can only be true or false")
+		}
+
+		allowsAnswerEdits, err := strconv.ParseBool(gameDetailsMap[keyAllowsAnswerEdits])
+		if err != nil {
+			return nil, fmt.Errorf("allows-answer-edits can only be only true or false")
+		}
+
+		answers := types.GameAnswers{}
+		for index, answer := range gameAnswersSlice {
+			if strings.TrimSpace(answer) == "" {
+				return nil, fmt.Errorf("invalid answer text at index %s", string(index))
+			}
+
+			gameAnswer := types.GameAnswer{
+				ID:   types.GameAnswerID(index),
+				Text: answer,
+			}
+
+			answers = answers.AppendIfMissing(gameAnswer)
+		}
+
+		gameData = &types.GameData{
+			Question:              question,
+			EndDate:               date,
+			ProvidedAnswers:       answers,
+			AllowsMultipleAnswers: allowMultipleAnswers,
+			AllowsAnswerEdits:     allowsAnswerEdits,
+		}
+	}
+
+	return gameData, nil
+
+}
+
 // getPollData parses the pollData of a post. If no poll data is found returns `nil` instead.
 func getPollData(cmd *cobra.Command) (*types.PollData, error) {
 	pollDetailsMap, err := cmd.Flags().GetStringToString(flagPollDetails)
@@ -170,7 +243,7 @@ By default this field is set to true.
 === Attachments ===
 If you want to add one or more attachment(s), you have to use the --attachment flag.
 You need to firstly specify the attachment URI and then its mime-type separeted by a comma.
-You can also specify the desmos addresses tagged in the attachment you're sharing by adding as 
+You can also specify the desmos addresses tagged in the attachment you're sharing by adding as
 many address you want after the mime-type separated by a comma.
 
 %s tx posts create "4e188d9c17150037d5199bbdb91ae1eb2a78a15aca04cb35530cccb81494b36e" "A post with a single attachment" \
@@ -194,7 +267,7 @@ If you want to add a poll to your post you need to specify it through two flags:
      * date: the end date of your poll after which no further answers will be accepted
      * multiple-answers: a boolean indicating the possibility of multiple answers from users
      * allows-answers-edits: a boolean value that indicates the possibility to edit the answers in the future
-  2. --poll-answer, which accepts a slice of answers that will be provided to the users once they want to take part in the poll votations.	
+  2. --poll-answer, which accepts a slice of answers that will be provided to the users once they want to take part in the poll votations.
      Each answer should be identified by the text of the answer itself.
 
 If a poll is provided, the post can be created even without specifying any message as follows:
@@ -205,6 +278,16 @@ E.g.
 	--poll-answer "Beagle" \
 	--poll-answer "Pug" \
 	--poll-answer "German Sheperd"
+
+=======Game==========
+
+desmoscli tx posts create "2bdf5932925584b9a86470bea60adce69041608a447f84a3317723aa5678ec88" "Post with poll" \
+	--game-details "question=Which dog do you prefer?,multiple-answers=false,allows-answer-edits=true,end-date=2020-11-01T15:00:00.000Z" \
+	--game-answer "Beagle" \
+	--game-answer "Pug" 
+
+
+
 `, version.ClientName, version.ClientName, version.ClientName, version.ClientName, version.ClientName, version.ClientName),
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -227,6 +310,11 @@ E.g.
 				return err
 			}
 
+			gameData, err := getGameData(cmd)
+			if err != nil {
+				return err
+			}
+
 			text := ""
 			if len(args) > 1 {
 				text = args[1]
@@ -241,6 +329,7 @@ E.g.
 				cliCtx.GetFromAddress(),
 				attachments,
 				pollData,
+				gameData,
 			)
 
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
@@ -252,6 +341,8 @@ E.g.
 	cmd.Flags().StringArray(flagAttachment, []string{}, "Current post's attachment")
 	cmd.Flags().StringToString(flagPollDetails, map[string]string{}, "Current post's poll details")
 	cmd.Flags().StringSlice(flagPollAnswer, []string{}, "Current post's poll answer")
+	cmd.Flags().StringToString(flagGameDetails, map[string]string{}, "Current post's game details")
+	cmd.Flags().StringSlice(flagGameAnswer, []string{}, "Current post's game answer")
 
 	return cmd
 }
@@ -280,7 +371,7 @@ If you want to edit post's poll you need to specify it through two flags:
      * date: the end date of your poll after which no further answers will be accepted
      * multiple-answers: a boolean indicating the possibility of multiple answers from users
      * allows-answers-edits: a boolean value that indicates the possibility to edit the answers in the future
-  2. --poll-answer, which accepts a slice of answers that will be provided to the users once they want to take part in the poll votations.	
+  2. --poll-answer, which accepts a slice of answers that will be provided to the users once they want to take part in the poll votations.
      Each answer should be identified by the text of the answer itself.
 
 If a poll is provided, the post can be edited even without specifying any message:
@@ -328,7 +419,8 @@ E.g.
 	cmd.Flags().StringArray(flagAttachment, []string{}, "Current post's attachment")
 	cmd.Flags().StringToString(flagPollDetails, map[string]string{}, "Current post's poll details")
 	cmd.Flags().StringSlice(flagPollAnswer, []string{}, "Current post's poll answer")
-
+	cmd.Flags().StringToString(flagGameDetails, map[string]string{}, "Current post's game details")
+	cmd.Flags().StringSlice(flagGameAnswer, []string{}, "Current post's game answer")
 	return cmd
 }
 
@@ -338,10 +430,10 @@ func GetCmdAddPostReaction(cdc *codec.Codec) *cobra.Command {
 		Use:   "add-reaction [post-id] [value]",
 		Short: "Adds a reaction to a post",
 		Long: fmt.Sprintf(`
-Add a reaction to the post having the given id with the specified value. 
+Add a reaction to the post having the given id with the specified value.
 The value has to be a reaction short code.
 
-E.g. 
+E.g.
 %s tx posts add-reaction a4469741bb0c0622627810082a5f2e4e54fbbb888f25a4771a5eebc697d30cfc :thumbsup: --from jack
 `, version.ClientName),
 		Args: cobra.ExactArgs(2),
@@ -367,10 +459,10 @@ func GetCmdRemovePostReaction(cdc *codec.Codec) *cobra.Command {
 		Use:   "remove-reaction [post-id] [value]",
 		Short: "Removes an existing reaction from a post",
 		Long: fmt.Sprintf(`
-Removes the reaction having the given value from the post having the given id. 
+Removes the reaction having the given value from the post having the given id.
 The value has to be a reaction short code.
 
-E.g. 
+E.g.
 %s tx posts remove-reaction a4469741bb0c0622627810082a5f2e4e54fbbb888f25a4771a5eebc697d30cfc :thumbsup: --from jack
 `, version.ClientName),
 		Args: cobra.ExactArgs(2),

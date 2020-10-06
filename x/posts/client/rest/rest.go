@@ -26,6 +26,7 @@ type CreatePostReq struct {
 	CreationTime   time.Time         `json:"creation_time"`
 	Medias         types.Attachments `json:"attachments,omitempty"`
 	PollData       *types.PollData   `json:"poll_data,omitempty"`
+	GameData       *types.GameData   `json:"game_data,omitempty"`
 }
 
 // AddReactionReq defines the properties of a reaction adding request's body.

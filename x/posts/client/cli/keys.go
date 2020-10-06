@@ -12,6 +12,8 @@ const (
 	flagAttachment     = "attachment"
 	flagPollDetails    = "poll-details"
 	flagPollAnswer     = "poll-answer"
+	flagGameDetails    = "game-details"
+	flagGameAnswer     = "game-answer"
 	flagCreationTime   = "creation-time"
 	flagAllowsComments = "allows-comments"
 	flagSubspace       = "subspace"
