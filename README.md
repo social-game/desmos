@@ -7,8 +7,8 @@
 ![GitHub](https://img.shields.io/github/license/desmos-labs/desmos.svg)
 
 ## Introduction
-Desmos is a blockchain in the [Cosmos](https://cosmos.network) ecosystem specific for social networking apps. 
-It uses game theory and on-chain governance to decentralize the business model of social network which prioritize 
+Desmos is a blockchain in the [Cosmos](https://cosmos.network) ecosystem specific for social networking apps.
+It uses game theory and on-chain governance to decentralize the business model of social network which prioritize
 the interests of users.
 
 ## Useful links
@@ -24,3 +24,11 @@ the interests of users.
 - [Take a look at the website](https://desmos.network)
 - [Follow us on Twitter](https://twitter.com/desmosnetwork)
 - [Read about us on Medium](https://medium.com/desmosnetwork)
+
+## replace project path
+
+```bash
+
+gsed -i  "s/github.com\/desmos-labs\/desmos/github.com\/social-game\/desmos/g"  `grep "github.com/desmos-labs/desmos" -rl  /Users/a/go/src/github.com/social-game/desmos`
+
+```

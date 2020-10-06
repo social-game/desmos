@@ -53,6 +53,10 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg types.MsgCreatePost
 		post = post.WithPollData(*msg.PollData)
 	}
 
+	if msg.GameData != nil {
+		post = post.WithGameData(*msg.GameData)
+	}
+
 	// Check for double posting
 	if existing, found := keeper.GetPost(ctx, post.PostID); found {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("the provided post conflicts with the one having id %s", existing.PostID))

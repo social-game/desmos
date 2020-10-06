@@ -5,6 +5,7 @@ package models
 
 import (
 	"github.com/desmos-labs/desmos/x/posts/types/models/common"
+	"github.com/desmos-labs/desmos/x/posts/types/models/games"
 	"github.com/desmos-labs/desmos/x/posts/types/models/polls"
 	"github.com/desmos-labs/desmos/x/posts/types/models/reactions"
 )
@@ -63,16 +64,21 @@ var (
 )
 
 type (
-	OptionalData  = common.OptionalData
-	KeyValue      = common.KeyValue
-	Attachment    = common.Attachment
-	Attachments   = common.Attachments
-	AnswerID      = polls.AnswerID
-	PollAnswer    = polls.PollAnswer
-	PollAnswers   = polls.PollAnswers
-	PollData      = polls.PollData
-	UserAnswer    = polls.UserAnswer
-	UserAnswers   = polls.UserAnswers
+	OptionalData = common.OptionalData
+	KeyValue     = common.KeyValue
+	Attachment   = common.Attachment
+	Attachments  = common.Attachments
+	AnswerID     = polls.AnswerID
+	PollAnswer   = polls.PollAnswer
+	PollAnswers  = polls.PollAnswers
+	PollData     = polls.PollData
+	UserAnswer   = polls.UserAnswer
+	UserAnswers  = polls.UserAnswers
+
+	GameAnswer  = games.GameAnswer
+	GameAnswers = games.GameAnswers
+	GameData    = games.GameData
+
 	PostReaction  = reactions.PostReaction
 	PostReactions = reactions.PostReactions
 	Reaction      = reactions.Reaction

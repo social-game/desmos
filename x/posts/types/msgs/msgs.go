@@ -28,6 +28,7 @@ type MsgCreatePost struct {
 	Creator        sdk.AccAddress      `json:"creator" yaml:"creator"`
 	Attachments    models.Attachments  `json:"attachments,omitempty" yaml:"attachments,omitempty"`
 	PollData       *models.PollData    `json:"poll_data,omitempty" yaml:"poll_data,omitempty"`
+	GameData       *models.GameData    `json:"game_data,omitempty" yaml:"game_data,omitempty"`
 }
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost

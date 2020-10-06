@@ -110,6 +110,7 @@ type Post struct {
 	Creator        sdk.AccAddress `json:"creator" yaml:"creator"`                                 // Creator of the Post
 	Attachments    Attachments    `json:"attachments,omitempty" yaml:"attachments,omitempty"`     // Contains all the attachments that are shared with the post
 	PollData       *PollData      `json:"poll_data,omitempty" yaml:"poll_data,omitempty"`         // Contains the poll details, if existing
+	GameData       *GameData      `json:"game_data,omitempty" yaml:"game_data,omitempty"`         // Contains the game details, if existing
 }
 
 // computeID computes a post ID based on the content of the given post.
@@ -152,6 +153,13 @@ func (p Post) WithAttachments(attachments Attachments) Post {
 // WithPollData allows to easily set the given data as the poll data files associated with the p Post
 func (p Post) WithPollData(data PollData) Post {
 	p.PollData = &data
+	p.PostID = computeID(p)
+	return p
+}
+
+// WithGameData allows to easily set the given data as the game data files associated with the p Post
+func (p Post) WithGameData(data GameData) Post {
+	p.GameData = &data
 	p.PostID = computeID(p)
 	return p
 }
